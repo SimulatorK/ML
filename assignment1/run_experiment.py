@@ -36,7 +36,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     verbose = args.verbose
     threads = args.threads
-
+    
+    args.dt = True
+    
     seed = args.seed
     if seed is None:
         seed = np.random.randint(0, (2 ** 32) - 1, dtype='uint64')

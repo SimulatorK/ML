@@ -4,7 +4,7 @@ import os
 import sys
 
 from collections import defaultdict
-from time import clock
+from time import time as clock
 
 import pandas as pd
 import sklearn.model_selection as ms

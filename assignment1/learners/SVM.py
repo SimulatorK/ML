@@ -1,7 +1,7 @@
 import numpy as np
 
 from sklearn import svm
-from sklearn.linear_model import stochastic_gradient, SGDClassifier
+from sklearn.linear_model import _stochastic_gradient, SGDClassifier
 from sklearn.metrics import euclidean_distances
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.utils import check_X_y
@@ -77,7 +77,7 @@ class RBFSVMLearner(learners.BaseLearner):
                  tol=None,
                  shuffle=True,
                  verbose=False,
-                 epsilon=stochastic_gradient.DEFAULT_EPSILON,
+                 epsilon=_stochastic_gradient.DEFAULT_EPSILON,
                  n_jobs=1,
                  random_state=None,
                  learning_rate="optimal",

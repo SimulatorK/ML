@@ -42,9 +42,14 @@ class DTLearner(learners.BaseLearner):
                  random_state=random_state,
                  max_leaf_nodes=max_leaf_nodes,
                  min_impurity_decrease=min_impurity_decrease,
-                 min_impurity_split=min_impurity_split,
+# =============================================================================
+#                  min_impurity_split=min_impurity_split,
+# =============================================================================
                  class_weight=class_weight,
-                 presort=presort)
+# =============================================================================
+#                  presort=presort
+# =============================================================================
+                 )
 
     def learner(self):
         return self
