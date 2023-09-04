@@ -9,14 +9,16 @@
 """
 # Simple Decision Tree Classifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import preprocessing, utils
-import sklearn.model_selection as ms
+#from sklearn import preprocessing, utils
+from  sklearn import model_selection
 # Decision Tree with boosting
 from sklearn.ensemble import GradientBoostingClassifier
+# Neural Network MLP
+from sklearn.neural_network import MLPClassifier
 
 import os
 import pandas as pd
-import random
+#simport random
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
@@ -40,6 +42,9 @@ datasets = {
     'Credit Default':ds1,
     'Room Occupancy':ds2,
     }
+
+#Train Test Split for all experiments 
+test_size = 0.1 
 
 ###############################################################################
 # Helper Functions
@@ -78,8 +83,7 @@ for DataSetName, ds in datasets.items():
     Ydata = ds.iloc[:,-1]
     
     # Split data (set random seed)
-    test_size = 0.2
-    Xtrain, Xtest, Ytrain, Ytest = ms.train_test_split(Xdata,
+    Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
                                                        test_size=test_size,
                                                        random_state=seed)
@@ -279,8 +283,7 @@ for DataSetName, ds in datasets.items():
     Ydata = ds.iloc[:,-1]
     
     # Split data (set random seed)
-    test_size = 0.2
-    Xtrain, Xtest, Ytrain, Ytest = ms.train_test_split(Xdata,
+    Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
                                                        test_size=test_size,
                                                        random_state=seed)
@@ -367,14 +370,12 @@ for DataSetName, ds in datasets.items():
         
         # Fit the dt to training data
         t = timefit(model,(Xtrain,Ytrain))
-        dt_boost_time_md.append(t)
+        dt_boost_time_ms.append(t)
         
         # Score on test data
-        dtscore = model.score(Xtest,Ytest)
-        
         # Add to scores
-        dt_boost_score_out_md.append(dtscore)
-        dt_boost_score_in_md.append(model.score(Xtrain,Ytrain))
+        dt_boost_score_out_ms.append(model.score(Xtest,Ytest))
+        dt_boost_score_in_ms.append(model.score(Xtrain,Ytrain))
     
     #######################
     # Create plot
@@ -416,7 +417,7 @@ for DataSetName, ds in datasets.items():
     ax10.set_ylabel('Training Time (seconds)')
     ls = l1+ l2 + l3
     lb = [l.get_label() for l in ls]
-    ax[1][0].set_xlabel(f'Max_Depth')
+    ax[1][0].set_xlabel('Max_Depth')
     ax[1][0].set_ylabel('Score')
     ax[1][0].grid()
     ax[1][0].legend(ls,lb,loc=0)
@@ -429,7 +430,7 @@ for DataSetName, ds in datasets.items():
     ax10.set_ylabel('Training Time (seconds)')
     ls = l1+ l2 + l3
     lb = [l.get_label() for l in ls]
-    ax[1][1].set_xlabel(f'Min_samples_leaf')
+    ax[1][1].set_xlabel('Min_samples_leaf')
     ax[1][1].set_ylabel('Score')
     ax[1][1].grid()
     ax[1][1].legend(ls,lb,loc=0)
@@ -440,6 +441,68 @@ for DataSetName, ds in datasets.items():
     plt.show() # Save fig
     
     # 
+
+
+###############################################################################
+# Neural Network - Using Multi-Layer Perceptron MLP Classifier
+###############################################################################
+
+
+for DataSetName, ds in datasets.items():
+    
+    ## Get X, Y data for test and train
+    Xdata = ds.iloc[:,1:-1]
+    Ydata = ds.iloc[:,-1]
+    
+    # Split data (set random seed)
+    Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
+                                                       Ydata,
+                                                       test_size=test_size,
+                                                       random_state=seed)
+    
+    ##Vary Learning_rate using learning_rate_init
+    lr_rates = np.linspace(0.001,0.09,20)
+    
+    mlp_out_score_lr = []
+    mlp_in_score_lr = []
+    mlp_time_lr = []
+    # Use constant rate
+    for lr_ in lr_rates:
+        model = MLPClassifier(learning_rate_init=lr_)
+    
+        t = timefit(model,(Xtrain,Ytrain))
+        
+        mlp_time_lr.append(t)
+        
+        mlp_out_score_lr.append(model.score(Xtest,Ytest))
+        mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
+        
+        print(f'MLP: {model}-> Fit Time = {t} seconds')
+
+
+
+
+    #######################
+    # Create plot
+    #######################
+    fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
+
+
+
+    fig.tight_layout()
+    plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
+    plt.savefig(f'Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
+    plt.show() # Save fig
+
+
+
+
+
+
+
+
+
+
 
 
 
