@@ -27,8 +27,11 @@ seed = 1
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
     
-creditDefaultFile = r".\data\default of credit card clients.xls"
-roomOccupancyFile = r"C:\Users\ec528e\Documents\My Files\School\ML\ML\data\Occupancy_Estimation.csv"
+creditDefaultFile = r"data/default of credit card clients.xls"
+roomOccupancyFile = r"data/Occupancy_Estimation.csv"
+
+creditDefaultFile = os.path.join(os.getcwd(),creditDefaultFile)
+roomOccupancyFile = os.path.join(os.getcwd(),roomOccupancyFile)
 
 ds1 = pd.read_excel(creditDefaultFile,skiprows=1)
 ds2 = pd.read_csv(roomOccupancyFile)
@@ -348,6 +351,31 @@ for DataSetName, ds in datasets.items():
         dt_boost_score_out_md.append(dtscore)
         dt_boost_score_in_md.append(model.score(Xtrain,Ytrain))
     
+    ## Min samples
+    dt_boost_score_out_ms = []
+    dt_boost_score_in_ms = []
+    dt_boost_time_ms = []
+    for ms in min_samples:
+        n_estimators = 20
+        learning_rate = 0.1
+        max_depth = 5
+        model = GradientBoostingClassifier(n_estimators=n_estimator,
+                                           learning_rate=learning_rate,
+                                           max_depth = max_depth,
+                                           min_samples_leaf=ms,
+                                           random_state = seed)
+        
+        # Fit the dt to training data
+        t = timefit(model,(Xtrain,Ytrain))
+        dt_boost_time_md.append(t)
+        
+        # Score on test data
+        dtscore = model.score(Xtest,Ytest)
+        
+        # Add to scores
+        dt_boost_score_out_md.append(dtscore)
+        dt_boost_score_in_md.append(model.score(Xtrain,Ytrain))
+    
     #######################
     # Create plot
     #######################
@@ -380,12 +408,38 @@ for DataSetName, ds in datasets.items():
     ax[0][1].grid()
     ax[0][1].legend(ls,lb,loc=0)
     
+    #Boosting max_depth
+    ax10 = ax[1][0].twinx()
+    l1 = ax[1][0].plot(max_depths,dt_boost_score_in_md,label='Training Score')
+    l2 = ax[1][0].plot(max_depths,dt_boost_score_out_md,label='Test Score')
+    l3 = ax10.plot(max_depths,dt_boost_time_md,'k--',label='Training Time')
+    ax10.set_ylabel('Training Time (seconds)')
+    ls = l1+ l2 + l3
+    lb = [l.get_label() for l in ls]
+    ax[1][0].set_xlabel(f'Max_Depth')
+    ax[1][0].set_ylabel('Score')
+    ax[1][0].grid()
+    ax[1][0].legend(ls,lb,loc=0)
+    
+    #Boosting min_samples_leaf
+    ax11 = ax[1][1].twinx()
+    l1 = ax[1][1].plot(min_samples,dt_boost_score_in_ms,label='Training Score')
+    l2 = ax[1][1].plot(min_samples,dt_boost_score_out_ms,label='Test Score')
+    l3 = ax11.plot(min_samples,dt_boost_time_ms,'k--',label='Training Time')
+    ax10.set_ylabel('Training Time (seconds)')
+    ls = l1+ l2 + l3
+    lb = [l.get_label() for l in ls]
+    ax[1][1].set_xlabel(f'Min_samples_leaf')
+    ax[1][1].set_ylabel('Score')
+    ax[1][1].grid()
+    ax[1][1].legend(ls,lb,loc=0)
+    
     fig.tight_layout()
     plt.suptitle(f'Boosted Tree - {DataSetName}\n')
     plt.savefig(f'BoostedTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
     
-
+    # 
 
 
 
