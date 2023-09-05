@@ -31,16 +31,22 @@ if __name__ == '__main__':
     
 creditDefaultFile = r"data/default of credit card clients.xls"
 roomOccupancyFile = r"data/Occupancy_Estimation.csv"
+mushroomClassificationFile = r"data\secondary+mushroom+dataset\MushroomDataset\secondary_data.csv"
+studentDropoutfile = r"data\predict+students+dropout+and+academic+success\data.csv"
 
 creditDefaultFile = os.path.join(os.getcwd(),creditDefaultFile)
 roomOccupancyFile = os.path.join(os.getcwd(),roomOccupancyFile)
 
 ds1 = pd.read_excel(creditDefaultFile,skiprows=1)
 ds2 = pd.read_csv(roomOccupancyFile)
+ds3 = pd.read_csv(mushroomClassificationFile)
+ds4 = pd.read_csv(studentDropoutfile)
 
 datasets = {
     'Credit Default':ds1,
     'Room Occupancy':ds2,
+    #'Mushroom Classification':ds3,
+    'Student Dropout':ds4,
     }
 
 #Train Test Split for all experiments 
@@ -486,7 +492,7 @@ for DataSetName, ds in datasets.items():
     # Create plot
     #######################
     fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
-
+    
 
 
     fig.tight_layout()
