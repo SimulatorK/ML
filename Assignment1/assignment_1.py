@@ -269,7 +269,7 @@ for DataSetName, ds in datasets.items():
     
     fig.tight_layout()
     plt.suptitle(f'Decision Tree - {DataSetName}\n')
-    plt.savefig(f'DecisionTreeClassifier_{DataSetName}_Figure.png')
+    plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 
     
@@ -443,7 +443,7 @@ for DataSetName, ds in datasets.items():
     
     fig.tight_layout()
     plt.suptitle(f'Boosted Tree - {DataSetName}\n')
-    plt.savefig(f'BoostedTreeClassifier_{DataSetName}_Figure.png')
+    plt.savefig(f'Images/BoostedTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
     
     # 
@@ -497,7 +497,7 @@ for DataSetName, ds in datasets.items():
 
     fig.tight_layout()
     plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
-    plt.savefig(f'Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
+    plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 
 
