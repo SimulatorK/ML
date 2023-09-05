@@ -9,12 +9,16 @@
 """
 # Simple Decision Tree Classifier
 from sklearn.tree import DecisionTreeClassifier
-#from sklearn import preprocessing, utils
+from sklearn import preprocessing
 from  sklearn import model_selection
 # Decision Tree with boosting
 from sklearn.ensemble import GradientBoostingClassifier
 # Neural Network MLP
 from sklearn.neural_network import MLPClassifier
+# KNN
+from sklearn.neighbors import KNeighborsClassifier
+# Support Vector Machine - SVM
+from sklearn.svm import LinearSVC
 
 import os
 import pandas as pd
@@ -45,7 +49,7 @@ ds4 = pd.read_csv(studentDropoutfile)
 datasets = {
     'Credit Default':ds1,
     'Room Occupancy':ds2,
-    #'Mushroom Classification':ds3,
+    'Mushroom Classification':ds3,
     'Student Dropout':ds4,
     }
 
@@ -87,6 +91,14 @@ for DataSetName, ds in datasets.items():
     ## Get X, Y data for test and train
     Xdata = ds.iloc[:,1:-1]
     Ydata = ds.iloc[:,-1]
+    
+    ## PRE-PROCESS ALL DATA
+    for col in range(Xdata.shape[1]):
+        le = preprocessing.LabelEncoder()
+# =============================================================================
+#         scaler = preprocessing.MinMaxScaler()
+# =============================================================================
+        Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
     
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
@@ -288,6 +300,14 @@ for DataSetName, ds in datasets.items():
     Xdata = ds.iloc[:,1:-1]
     Ydata = ds.iloc[:,-1]
     
+    ## PRE-PROCESS ALL DATA
+    for col in range(Xdata.shape[1]):
+        le = preprocessing.LabelEncoder()
+# =============================================================================
+#         scaler = preprocessing.MinMaxScaler()
+# =============================================================================
+        Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+    
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
@@ -460,6 +480,14 @@ for DataSetName, ds in datasets.items():
     Xdata = ds.iloc[:,1:-1]
     Ydata = ds.iloc[:,-1]
     
+    ## PRE-PROCESS ALL DATA
+    for col in range(Xdata.shape[1]):
+        le = preprocessing.LabelEncoder()
+# =============================================================================
+#         scaler = preprocessing.MinMaxScaler()
+# =============================================================================
+        Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+    
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
@@ -467,14 +495,20 @@ for DataSetName, ds in datasets.items():
                                                        random_state=seed)
     
     ##Vary Learning_rate using learning_rate_init
-    lr_rates = np.linspace(0.001,0.09,20)
+    lr_rates = np.linspace(0.0005,0.001,10)
     
     mlp_out_score_lr = []
     mlp_in_score_lr = []
     mlp_time_lr = []
+    
+    # Start figure before loop to add loss_curves
+    fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
     # Use constant rate
     for lr_ in lr_rates:
-        model = MLPClassifier(learning_rate_init=lr_)
+        
+        mlp_loss_lr = []
+        model = MLPClassifier(learning_rate_init=lr_,
+                              random_state = seed)
     
         t = timefit(model,(Xtrain,Ytrain))
         
@@ -483,17 +517,25 @@ for DataSetName, ds in datasets.items():
         mlp_out_score_lr.append(model.score(Xtest,Ytest))
         mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
         
-        print(f'MLP: {model}-> Fit Time = {t} seconds')
-
-
-
-
+        ax[0][0].loglog(model.loss_curve_,label=f'LR={round(lr_,5)}')
+    
     #######################
     # Create plot
     #######################
-    fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
     
-
+    ax[0][0].set_xlabel('Iterations')
+    ax[0][0].set_ylabel('Loss')
+    ax[0][0].grid()
+    ax[0][0].legend()
+    
+    ax[1][0].plot(lr_rates,mlp_time_lr,)
+    ax[1][0].set_xlabel('Learning Rate')
+    ax[1][0].set_ylabel('Training Time (sec)')
+    ax[1][0].grid()
+    
+    
+    # Vary on 
+    
 
     fig.tight_layout()
     plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
