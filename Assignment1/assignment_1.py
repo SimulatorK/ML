@@ -7,6 +7,8 @@
 
 
 """
+
+
 # Simple Decision Tree Classifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import preprocessing
@@ -32,7 +34,9 @@ seed = 1
 
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
-    
+
+
+## Select Data Sets
 creditDefaultFile = r"data/default of credit card clients.xls"
 roomOccupancyFile = r"data/Occupancy_Estimation.csv"
 mushroomClassificationFile = r"data\secondary+mushroom+dataset\MushroomDataset\secondary_data.csv"
@@ -48,9 +52,9 @@ ds4 = pd.read_csv(studentDropoutfile)
 
 datasets = {
     'Credit Default':ds1,
-    'Room Occupancy':ds2,
+    #'Room Occupancy':ds2,
     'Mushroom Classification':ds3,
-    'Student Dropout':ds4,
+    #'Student Dropout':ds4,
     }
 
 #Train Test Split for all experiments 
@@ -76,6 +80,7 @@ def timefit(model,args,verbose: bool = True):
 
 ###############################################################################
 # Decision Tree Test
+# ****Add Pruning*****
 ###############################################################################
 
 # Min samples to try
@@ -495,7 +500,7 @@ for DataSetName, ds in datasets.items():
                                                        random_state=seed)
     
     ##Vary Learning_rate using learning_rate_init
-    lr_rates = np.linspace(0.0005,0.001,10)
+    lr_rates = np.linspace(0.0005,0.001,4)
     
     mlp_out_score_lr = []
     mlp_in_score_lr = []
@@ -508,30 +513,64 @@ for DataSetName, ds in datasets.items():
         
         mlp_loss_lr = []
         model = MLPClassifier(learning_rate_init=lr_,
+                              early_stopping = True,
+                              hidden_layer_sizes = (100,100),
                               random_state = seed)
     
         t = timefit(model,(Xtrain,Ytrain))
         
         mlp_time_lr.append(t)
-        
-        mlp_out_score_lr.append(model.score(Xtest,Ytest))
-        mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
+# =============================================================================
+#         
+#         mlp_out_score_lr.append(model.score(Xtest,Ytest))
+#         mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
+# =============================================================================
         
         ax[0][0].loglog(model.loss_curve_,label=f'LR={round(lr_,5)}')
+        ax[0][1].loglog(model.validation_scores_,label=f'LR={round(lr_,5)}')
+        
+    # Vary the # of nodes in each hidden layer 
+    n_h = list(map(int,np.linspace(10, 200,5)))
+    # Set constant learning_rate == 0.0005 with early stopping and random seed
+    for n_h_ in n_h:
+        
+        mlp_loss_nh = []
+        
+        model = MLPClassifier(learning_rate_init=0.0005,
+                              early_stopping = True,
+                              hidden_layer_sizes = (100,n_h_),
+                              random_state = seed)
+        
+        t = timefit(model,(Xtrain,Ytrain))
+        
+        ax[1][0].loglog(model.loss_curve_,label=f'n_h={n_h_}')
+        ax[1][1].loglog(model.validation_scores_,label=f'n_h={n_h_}')
+        
+        
     
     #######################
     # Create plot
     #######################
-    
+    # Loss for lr_
     ax[0][0].set_xlabel('Iterations')
     ax[0][0].set_ylabel('Loss')
     ax[0][0].grid()
     ax[0][0].legend()
-    
-    ax[1][0].plot(lr_rates,mlp_time_lr,)
-    ax[1][0].set_xlabel('Learning Rate')
-    ax[1][0].set_ylabel('Training Time (sec)')
+    # Validation for lr_
+    ax[0][1].set_xlabel('Iterations')
+    ax[0][1].set_ylabel('Validation Score')
+    ax[0][1].grid()
+    ax[0][1].legend()
+    # Loss for n_h_
+    ax[1][0].set_xlabel('Iterations')
+    ax[1][0].set_ylabel('Loss')
     ax[1][0].grid()
+    ax[1][0].legend()
+    # Validation for lr_
+    ax[1][1].set_xlabel('Iterations')
+    ax[1][1].set_ylabel('Validation Score')
+    ax[1][1].grid()
+    ax[1][1].legend()
     
     
     # Vary on 
