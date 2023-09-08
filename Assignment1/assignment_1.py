@@ -28,6 +28,7 @@ import pandas as pd
 #simport random
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 from time import time
 
 # Load data sets
@@ -725,6 +726,89 @@ for DataSetName, ds in datasets.items():
     vPrint(f'SVM: {model} fitting...')
     svm_time_.append(timefit(model,args=(Xtrain,Ytrain)))
     
+
+###############################################################################
+# KNN - K-Nearest Neighbors
+###############################################################################
+
+# =============================================================================
+# def experiment4():
+# =============================================================================
+ks = list(map(int,np.linspace(1,20,10)))
+ls = list(map(int,np.linspace(2,50,10)))
+
+vPrint('Starting experiment 5')
+for DataSetName, ds in datasets.items():
+    
+    ## Get X, Y data for test and train
+    Xdata = ds.iloc[:,1:-1]
+    Ydata = ds.iloc[:,-1]
+    
+    ## PRE-PROCESS ALL DATA
+    for col in range(Xdata.shape[1]):
+        le = preprocessing.LabelEncoder()
+        scaler = preprocessing.MinMaxScaler()
+        Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+        Xdata.iloc[:,col] = scaler.fit_transform(np.array(Xdata.iloc[:,col]).reshape(-1,1))
+    
+    # Split data (set random seed)
+    Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
+                                                       Ydata,
+                                                       test_size=test_size,
+                                                       random_state=seed)
+    
+    knn_score_in_ = []
+    knn_score_out_ = []
+    
+    for k in ks:
+        
+        model = KNeighborsClassifier(n_neighbors=k,
+                                     )
+        timefit(model,args=(Xtrain,Ytrain))
+        knn_score_in_.append(model.score(Xtrain,Ytrain))
+        knn_score_out_.append(model.score(Xtest,Ytest))
+    
+    knn_score_in_ls = []
+    knn_score_out_ls = []
+    
+    for ls_ in ls:
+        n_neighbors = 10
+        model = KNeighborsClassifier(n_neighbors = n_neighbors,
+                                     leaf_size = ls_,
+                                     )
+        timefit(model,args=(Xtrain,Ytrain))
+        knn_score_in_ls.append(model.score(Xtrain,Ytrain))
+        knn_score_out_ls.append(model.score(Xtest,Ytest))
+        
+    
+    #######################
+    # Create plot
+    #######################
+        
+    fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
+    l1 = ax[0][0].plot(ks,knn_score_in_,label='Training Score')
+    l2 = ax[0][0].plot(ks,knn_score_out_,label='Test Score')
+    ls = l1+ l2
+    lb = [l.get_label() for l in ls]
+    ax[0][0].set_xlabel('Neighbors')
+    ax[0][0].set_ylabel('Score')
+    ax[0][0].grid()
+    ax[0][0].legend(ls,lb,loc=0)
+    
+    l1 = ax[0][0].plot(ls,knn_score_in_ls,label='Training Score')
+    l2 = ax[0][0].plot(ls,knn_score_out_ls,label='Test Score')
+    ls = l1+ l2
+    lb = [l.get_label() for l in ls]
+    ax[0][0].set_xlabel(f'Leaf Size (k={n_neighbors}')
+    ax[0][0].set_ylabel('Score')
+    ax[0][0].grid()
+    ax[0][0].legend(ls,lb,loc=0)
+    
+    fig.tight_layout()
+    plt.suptitle(f'KNN - {DataSetName}\n')
+    plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
+    plt.show() # Save fig
+
 # =============================================================================
 # 
 # if __name__ == '__main__':
@@ -732,7 +816,7 @@ for DataSetName, ds in datasets.items():
 #     multi = False
 #     
 #     if multi:
-#         
+#         pool = multiprocessing.Pool()
 #         p1 = multiprocessing.Process(target=experiment1)
 #         p2 = multiprocessing.Process(target=experiment2)
 #         p3 = multiprocessing.Process(target=experiment3)
@@ -761,10 +845,18 @@ for DataSetName, ds in datasets.items():
 # =============================================================================
 
     
+def compfunc(x):
+    
+    out = [[[random.random() * x for i in range(x)] for _ in range(x)] for _ in range(x)]
+    
+    for i in range(x):
+        for ii in range(x):
+            for iii in range(x):
+                
+                out[i][ii][ii] *= i*ii*iii
 
 
-
-
+    return out
 
 
 
