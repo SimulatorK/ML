@@ -724,7 +724,7 @@ for DataSetName, ds in datasets.items():
     svm_in_score_ = []
     
     model = LinearSVC(verbose=verbose,random_state = seed)
-    vPrint(f'SVM: {model} fitting...')
+    vPrint(f'LinearSVC: {model} fitting...')
     svm_time_.append(timefit(model,args=(Xtrain,Ytrain)))
     
 # =============================================================================

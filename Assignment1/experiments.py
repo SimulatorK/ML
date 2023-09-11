@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from sklearn import model_selection
+from sklearn import preprocessing
+from sklearn import pipeline
 
 class bcolors:
     ENDC = '\033[m'
@@ -33,16 +35,20 @@ class experiment:
         self.data = data
         self.test_size = test_size
         self.seed = random.randint(1,1e6) if not seed else seed
-        
+    
+    
     def setup(self):
         self.Xdata = self.data[:,:-1]
         self.Ydata = self.data[:,-1]
+        
+        self.pipe = pipeline.Pipeline([('label',preprocessing.LabelEncoder()),
+                                       ('scaler',preprocessing.MinMaxScaler()),
+                                        ])
         
         Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(self.Xdata,
                                                                         self.Ydata,
                                                                         test_size=self.test_size,
                                                                         random_state=self.seed)
-        
         
         
         
