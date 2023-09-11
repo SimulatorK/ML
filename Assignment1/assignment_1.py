@@ -66,6 +66,7 @@ test_size = 0.2
 
 # Verbosity level
 verbose = True
+run_grid_search = False
 
 ###############################################################################
 # Helper Functions
@@ -400,42 +401,42 @@ for DataSetName, ds in datasets.items():
 ###############################################################################
 # Setup GridSeachCV for Decision Tree with Pruning for each dataset
 ###############################################################################
-
-    estimator = DecisionTreeClassifier(random_state = seed) 
-    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
-
-    param_grid = {
-        'min_samples_leaf':min_samples,
-        'max_depth':max_depths,
-        'ccp_alpha':ccp_alphas,
-        'splitter':['best','random'],
-        }
+    if run_grid_search:
+        estimator = DecisionTreeClassifier(random_state = seed) 
+        vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
     
-    fold = []
-    for i in range(Xdata.shape[0]):
-        if Xdata.index[i] in Xtrain.index:
-            fold.append(-1)
-        else:
-            fold.append(0)
-            
-    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        param_grid = {
+            'min_samples_leaf':min_samples,
+            'max_depth':max_depths,
+            'ccp_alpha':ccp_alphas,
+            'splitter':['best','random'],
+            }
+        
+        fold = []
+        for i in range(Xdata.shape[0]):
+            if Xdata.index[i] in Xtrain.index:
+                fold.append(-1)
+            else:
+                fold.append(0)
+                
+        ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        
+        clf = model_selection.GridSearchCV(estimator=estimator, 
+                                           param_grid = param_grid, 
+                                           verbose=3 if verbose else 0,
+                                           scoring = 'accuracy',
+                                           n_jobs = -1,
+                                           return_train_score = True,
+                                           cv=ps,
+                                           )
     
-    clf = model_selection.GridSearchCV(estimator=estimator, 
-                                       param_grid = param_grid, 
-                                       verbose=3 if verbose else 0,
-                                       scoring = 'accuracy',
-                                       n_jobs = -1,
-                                       return_train_score = True,
-                                       cv=ps,
-                                       )
-
-    clf.fit(Xdata,Ydata)
-
-    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        clf.fit(Xdata,Ydata)
     
-    clf.score(Xtest,Ytest)
-    clf.score(Xtrain,Ytrain)
-    
+        vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        
+        clf.score(Xtest,Ytest)
+        clf.score(Xtrain,Ytrain)
+        
     
 ###############################################################################
 # Decision Tree with boosting using GBC
@@ -624,38 +625,39 @@ for DataSetName, ds in datasets.items():
 ###############################################################################
 # Setup GridSeachCV for Decision Tree with Boosting for each dataset
 ###############################################################################
-    estimator = GradientBoostingClassifier(random_state = seed) 
-    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
-
-    param_grid = {
-        'n_estimators':n_estimators_,
-        'learning_rate':learning_rates,
-        'max_depth':max_depths,
-        'min_samples_leaf':min_samples,
-        }
+    if run_grid_search:    
+        estimator = GradientBoostingClassifier(random_state = seed) 
+        vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
     
-    fold = []
-    for i in range(Xdata.shape[0]):
-        if Xdata.index[i] in Xtrain.index:
-            fold.append(-1)
-        else:
-            fold.append(0)
-            
-    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        param_grid = {
+            'n_estimators':n_estimators_,
+            'learning_rate':learning_rates,
+            'max_depth':max_depths,
+            'min_samples_leaf':min_samples,
+            }
+        
+        fold = []
+        for i in range(Xdata.shape[0]):
+            if Xdata.index[i] in Xtrain.index:
+                fold.append(-1)
+            else:
+                fold.append(0)
+                
+        ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        
+        clf = model_selection.GridSearchCV(estimator=estimator, 
+                                           param_grid = param_grid, 
+                                           verbose=3 if verbose else 0,
+                                           scoring = 'accuracy',
+                                           n_jobs = -1,
+                                           return_train_score = True,
+                                           cv=ps,
+                                           )
     
-    clf = model_selection.GridSearchCV(estimator=estimator, 
-                                       param_grid = param_grid, 
-                                       verbose=3 if verbose else 0,
-                                       scoring = 'accuracy',
-                                       n_jobs = -1,
-                                       return_train_score = True,
-                                       cv=ps,
-                                       )
-
-    clf.fit(Xdata,Ydata)
-
-    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        clf.fit(Xdata,Ydata)
     
+        vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        
 ###############################################################################
 # Neural Network - Using Multi-Layer Perceptron MLP Classifier
 ###############################################################################
@@ -769,37 +771,38 @@ for DataSetName, ds in datasets.items():
 ###############################################################################
 # Setup GridSeachCV for MLP
 ###############################################################################
-    estimator = MLPClassifier(random_state = seed) 
-    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
-
-    param_grid = {
-        'learning_rate':lr_rates,
-        'activation':['identity', 'logistic', 'tanh', 'relu'],
-        'solver':['lbfgs', 'sgd', 'adam'],
-        }
+    if run_grid_search:
+        estimator = MLPClassifier(random_state = seed) 
+        vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
     
-    fold = []
-    for i in range(Xdata.shape[0]):
-        if Xdata.index[i] in Xtrain.index:
-            fold.append(-1)
-        else:
-            fold.append(0)
-            
-    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        param_grid = {
+            'learning_rate':lr_rates,
+            'activation':['identity', 'logistic', 'tanh', 'relu'],
+            'solver':['lbfgs', 'sgd', 'adam'],
+            }
+        
+        fold = []
+        for i in range(Xdata.shape[0]):
+            if Xdata.index[i] in Xtrain.index:
+                fold.append(-1)
+            else:
+                fold.append(0)
+                
+        ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        
+        clf = model_selection.GridSearchCV(estimator=estimator, 
+                                           param_grid = param_grid, 
+                                           verbose=3 if verbose else 0,
+                                           scoring = 'accuracy',
+                                           n_jobs = -1,
+                                           return_train_score = True,
+                                           cv=ps,
+                                           )
     
-    clf = model_selection.GridSearchCV(estimator=estimator, 
-                                       param_grid = param_grid, 
-                                       verbose=3 if verbose else 0,
-                                       scoring = 'accuracy',
-                                       n_jobs = -1,
-                                       return_train_score = True,
-                                       cv=ps,
-                                       )
-
-    clf.fit(Xdata,Ydata)
-
-    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        clf.fit(Xdata,Ydata)
     
+        vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        
 ###############################################################################
 # SVM - Support Vector Machines
 ###############################################################################
