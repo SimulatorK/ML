@@ -14,6 +14,7 @@ import argparse
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import preprocessing
 from  sklearn import model_selection
+
 from sklearn.decomposition import PCA
 # Decision Tree with boosting
 from sklearn.ensemble import GradientBoostingClassifier
@@ -34,7 +35,7 @@ import random
 from time import time
 
 # Load data sets
-seed = random.randint(1,100)
+seed = 333
 
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
@@ -396,6 +397,45 @@ for DataSetName, ds in datasets.items():
     plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 
+###############################################################################
+# Setup GridSeachCV for Decision Tree with Pruning for each dataset
+###############################################################################
+
+    estimator = DecisionTreeClassifier(random_state = seed) 
+    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
+
+    param_grid = {
+        'min_samples_leaf':min_samples,
+        'max_depth':max_depths,
+        'ccp_alpha':ccp_alphas,
+        'splitter':['best','random'],
+        }
+    
+    fold = []
+    for i in range(Xdata.shape[0]):
+        if Xdata.index[i] in Xtrain.index:
+            fold.append(-1)
+        else:
+            fold.append(0)
+            
+    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+    
+    clf = model_selection.GridSearchCV(estimator=estimator, 
+                                       param_grid = param_grid, 
+                                       verbose=3 if verbose else 0,
+                                       scoring = 'accuracy',
+                                       n_jobs = -1,
+                                       return_train_score = True,
+                                       cv=ps,
+                                       )
+
+    clf.fit(Xdata,Ydata)
+
+    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+    
+    clf.score(Xtest,Ytest)
+    clf.score(Xtrain,Ytrain)
+    
     
 ###############################################################################
 # Decision Tree with boosting using GBC
@@ -582,6 +622,41 @@ for DataSetName, ds in datasets.items():
     plt.show() # Save fig
 
 ###############################################################################
+# Setup GridSeachCV for Decision Tree with Boosting for each dataset
+###############################################################################
+    estimator = GradientBoostingClassifier(random_state = seed) 
+    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
+
+    param_grid = {
+        'n_estimators':n_estimators_,
+        'learning_rate':learning_rates,
+        'max_depth':max_depths,
+        'min_samples_leaf':min_samples,
+        }
+    
+    fold = []
+    for i in range(Xdata.shape[0]):
+        if Xdata.index[i] in Xtrain.index:
+            fold.append(-1)
+        else:
+            fold.append(0)
+            
+    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+    
+    clf = model_selection.GridSearchCV(estimator=estimator, 
+                                       param_grid = param_grid, 
+                                       verbose=3 if verbose else 0,
+                                       scoring = 'accuracy',
+                                       n_jobs = -1,
+                                       return_train_score = True,
+                                       cv=ps,
+                                       )
+
+    clf.fit(Xdata,Ydata)
+
+    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+    
+###############################################################################
 # Neural Network - Using Multi-Layer Perceptron MLP Classifier
 ###############################################################################
 
@@ -691,7 +766,40 @@ for DataSetName, ds in datasets.items():
     plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 
+###############################################################################
+# Setup GridSeachCV for MLP
+###############################################################################
+    estimator = MLPClassifier(random_state = seed) 
+    vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
 
+    param_grid = {
+        'learning_rate':lr_rates,
+        'activation':['identity', 'logistic', 'tanh', 'relu'],
+        'solver':['lbfgs', 'sgd', 'adam'],
+        }
+    
+    fold = []
+    for i in range(Xdata.shape[0]):
+        if Xdata.index[i] in Xtrain.index:
+            fold.append(-1)
+        else:
+            fold.append(0)
+            
+    ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+    
+    clf = model_selection.GridSearchCV(estimator=estimator, 
+                                       param_grid = param_grid, 
+                                       verbose=3 if verbose else 0,
+                                       scoring = 'accuracy',
+                                       n_jobs = -1,
+                                       return_train_score = True,
+                                       cv=ps,
+                                       )
+
+    clf.fit(Xdata,Ydata)
+
+    vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+    
 ###############################################################################
 # SVM - Support Vector Machines
 ###############################################################################
@@ -724,8 +832,18 @@ for DataSetName, ds in datasets.items():
     svm_in_score_ = []
     
     model = LinearSVC(verbose=verbose,random_state = seed)
+    model_sgd = SGDClassifier()
+    
+    
     vPrint(f'LinearSVC: {model} fitting...')
     svm_time_.append(timefit(model,args=(Xtrain,Ytrain)))
+    vPrint(f'SGDClassifier: {model_sgd} fitting...')
+    
+    timefit(model_sgd,args=(Xtrain,Ytrain))
+    
+    svm_out_score_.append(model.score(Xtest,Ytest))
+    svm_in_score_.append(model.score(Xtrain,Ytrain))
+    
     
 # =============================================================================
 #     #######################
@@ -861,41 +979,6 @@ for DataSetName, ds in datasets.items():
     plt.suptitle(f'KNN - {DataSetName}\n')
     plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
     plt.show() # Save fig
-
-# =============================================================================
-# 
-# if __name__ == '__main__':
-#     
-#     multi = False
-#     
-#     if multi:
-#         pool = multiprocessing.Pool()
-#         p1 = multiprocessing.Process(target=experiment1)
-#         p2 = multiprocessing.Process(target=experiment2)
-#         p3 = multiprocessing.Process(target=experiment3)
-#         
-#         start = time()
-#         p1.start()
-#         p1.join()
-#         p2.start()
-#         p2.join()
-#         p3.start()
-#         p3.join()
-#         
-#         end = time()
-#         
-#         vPrint('Multi-processing time: {:.3f} seconds'.format(end-start))
-# 
-#     else:
-#         
-#         start = time()
-#         experiment1()
-#         experiment2()
-#         experiment3()
-#         end = time()
-#         
-#         vPrint('Sequential processing time : {:.3f} seconds'.format(end-start))
-# =============================================================================
 
 
 
