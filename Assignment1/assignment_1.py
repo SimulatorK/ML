@@ -35,7 +35,7 @@ import random
 from time import time
 
 # Load data sets
-seed = 333
+seed = 903860493
 
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
