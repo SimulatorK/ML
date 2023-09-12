@@ -683,7 +683,7 @@ for DataSetName, ds in datasets.items():
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
-                                                       test_size=0.00001,
+                                                       test_size=test_size,
                                                        random_state=seed)
     
     ##Vary Learning_rate using learning_rate_init
@@ -774,7 +774,12 @@ for DataSetName, ds in datasets.items():
     if run_grid_search:
         estimator = MLPClassifier(random_state = seed) 
         vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
-    
+        
+        nodes = list(map(int,np.linspace(Xdata.shape[1],Xdata.shape[1]*10,10)))
+        layers = list(map(int,np.linspace(Xdata.shape[1],Xdata.shape[1]*5,10)))
+        
+        hl = [[(node,layer) for node in nodes] for layer in layers]
+        
         param_grid = {
             'learning_rate':lr_rates,
             'activation':['identity', 'logistic', 'tanh', 'relu'],
