@@ -136,10 +136,17 @@ for DataSetName, ds in datasets.items():
     
     for col in range(Xdata.shape[1]):
         le = preprocessing.LabelEncoder()
-# =============================================================================
-#         scaler = preprocessing.MinMaxScaler()
-# =============================================================================
+        scaler = preprocessing.MinMaxScaler()
         Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+        Xdata.iloc[:,col] = scaler.fit_transform(np.array(Xdata.iloc[:,col]).reshape(-1,1))
+    
+    pca = PCA()
+    pca.fit_transform(Xdata)
+    best_features = pca.explained_variance_
+    scaler = preprocessing.MinMaxScaler()
+    best_features = scaler.fit_transform(best_features.reshape(-1,1))
+    
+    
 # =============================================================================
 #     
 #     # Only include data that includes 95% of data
@@ -666,6 +673,7 @@ for DataSetName, ds in datasets.items():
 # def experiment3():
 # =============================================================================
 vPrint('Starting experiment 3')
+max_iter = 1000
 for DataSetName, ds in datasets.items():
     
     ## Get X, Y data for test and train
@@ -675,11 +683,8 @@ for DataSetName, ds in datasets.items():
     ## PRE-PROCESS ALL DATA
     for col in range(Xdata.shape[1]):
         le = preprocessing.LabelEncoder()
-# =============================================================================
-#         scaler = preprocessing.MinMaxScaler()
-# =============================================================================
         Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
-    
+        
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
                                                        Ydata,
@@ -687,7 +692,7 @@ for DataSetName, ds in datasets.items():
                                                        random_state=seed)
     
     ##Vary Learning_rate using learning_rate_init
-    lr_rates = np.linspace(0.0005,0.001,4)
+    lr_rates = np.linspace(0.0005,0.001,10)
     
     mlp_out_score_lr = []
     mlp_in_score_lr = []
@@ -701,23 +706,22 @@ for DataSetName, ds in datasets.items():
         mlp_loss_lr = []
         model = MLPClassifier(learning_rate_init=lr_,
                               early_stopping = True,
-                              hidden_layer_sizes = (100,100),
+                              hidden_layer_sizes = (100,),
+                              max_iter = max_iter,
                               random_state = seed)
     
         t = timefit(model,(Xtrain,Ytrain))
         
         mlp_time_lr.append(t)
-# =============================================================================
-#         
-#         mlp_out_score_lr.append(model.score(Xtest,Ytest))
-#         mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
-# =============================================================================
         
-        ax[0][0].loglog(model.loss_curve_,label=f'LR={round(lr_,5)}')
-        ax[0][1].loglog(model.validation_scores_,label=f'LR={round(lr_,5)}')
+        mlp_out_score_lr.append(model.score(Xtest,Ytest))
+        mlp_in_score_lr.append(model.score(Xtrain,Ytrain))
+        
+        ax[0][0].plot(model.loss_curve_,label=f'LR={round(lr_,5)}')
+        ax[0][1].plot(model.validation_scores_,label=f'LR={round(lr_,5)}')
         
     # Vary the # of nodes in each hidden layer 
-    n_h = list(map(int,np.linspace(10, 200,5)))
+    n_h = list(map(int,np.linspace(10, 200,10)))
     # Set constant learning_rate == 0.0005 with early stopping and random seed
     for n_h_ in n_h:
         
@@ -725,13 +729,13 @@ for DataSetName, ds in datasets.items():
         
         model = MLPClassifier(learning_rate_init=0.0005,
                               early_stopping = True,
-                              hidden_layer_sizes = (100,n_h_),
+                              hidden_layer_sizes = (n_h_,),
                               random_state = seed)
         
         t = timefit(model,(Xtrain,Ytrain))
         
-        ax[1][0].loglog(model.loss_curve_,label=f'n_h={n_h_}')
-        ax[1][1].loglog(model.validation_scores_,label=f'n_h={n_h_}')
+        ax[1][0].plot(model.loss_curve_,label=f'n_h={n_h_}')
+        ax[1][1].plot(model.validation_scores_,label=f'n_h={n_h_}')
         
         
     
@@ -742,48 +746,34 @@ for DataSetName, ds in datasets.items():
     ax[0][0].set_xlabel('Iterations')
     ax[0][0].set_ylabel('Loss')
     ax[0][0].grid()
-    ax[0][0].legend()
     # Validation for lr_
     ax[0][1].set_xlabel('Iterations')
     ax[0][1].set_ylabel('Validation Score')
     ax[0][1].grid()
-    ax[0][1].legend()
     # Loss for n_h_
     ax[1][0].set_xlabel('Iterations')
     ax[1][0].set_ylabel('Loss')
     ax[1][0].grid()
-    ax[1][0].legend()
     # Validation for lr_
     ax[1][1].set_xlabel('Iterations')
     ax[1][1].set_ylabel('Validation Score')
     ax[1][1].grid()
-    ax[1][1].legend()
     
-    
-    # Vary on 
-    
-
-    fig.tight_layout()
-    plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
-    plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
-    plt.show() # Save fig
-
 ###############################################################################
 # Setup GridSeachCV for MLP
 ###############################################################################
     if run_grid_search:
-        estimator = MLPClassifier(random_state = seed) 
+        estimator = MLPClassifier(max_iter = max_iter,
+                                  random_state = seed,
+                                  early_stopping = True,
+                                  )
+        
         vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
         
-        nodes = list(map(int,np.linspace(Xdata.shape[1],Xdata.shape[1]*10,10)))
-        layers = list(map(int,np.linspace(Xdata.shape[1],Xdata.shape[1]*5,10)))
-        
-        hl = [[(node,layer) for node in nodes] for layer in layers]
-        
         param_grid = {
-            'learning_rate':lr_rates,
+            'learning_rate_init':lr_rates,
             'activation':['identity', 'logistic', 'tanh', 'relu'],
-            'solver':['lbfgs', 'sgd', 'adam'],
+            'hidden_layer_sizes':n_h,
             }
         
         fold = []
@@ -808,6 +798,23 @@ for DataSetName, ds in datasets.items():
     
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
         
+        ### ADD TO PLOT ###
+        # Add to loss curve plots
+        ax[0][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
+        ax[1][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
+        ax[0][0].legend()
+        ax[1][0].legend()
+        # Add to validation curve plots
+        ax[0][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[1][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[0][1].legend()
+        ax[1][1].legend()
+
+    fig.tight_layout()
+    plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
+    plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
+    plt.show() # Save fig
+    
 ###############################################################################
 # SVM - Support Vector Machines
 ###############################################################################
@@ -835,68 +842,123 @@ for DataSetName, ds in datasets.items():
                                                        test_size=test_size,
                                                        random_state=seed)
     
-    svm_time_ = []
-    svm_out_score_ = []
-    svm_in_score_ = []
+    loss_ = ['hinge', 'modified_huber', 'squared_hinge', 'perceptron',
+             'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive']
+    alpha_ = np.linspace(0.0001,0.0005,5)
     
-    model = LinearSVC(verbose=verbose,random_state = seed)
-    model_sgd = SGDClassifier()
+    # Start Plot
+    fig, ax =  plt.subplots(1,2,figsize=(12,10),dpi=200)
+    # 
+    svm_time_ls = []
+    svm_out_score_ls = []
+    svm_in_score_ls = []
+    
+    for loss in loss_:
+        model = SGDClassifier(loss = loss,
+                                  learning_rate = 'optimal',
+                                  early_stopping = True,
+                                  random_state = seed)
     
     
-    vPrint(f'LinearSVC: {model} fitting...')
-    svm_time_.append(timefit(model,args=(Xtrain,Ytrain)))
-    vPrint(f'SGDClassifier: {model_sgd} fitting...')
+        vPrint(f'LinearSVC: {model} fitting...')
+        svm_time_ls.append(timefit(model,args=(Xtrain,Ytrain)))
+        vPrint(f'SGDClassifier: {model} fitting...')
+        
+        timefit(model,args=(Xtrain,Ytrain))
+        
+        svm_out_score_ls.append(model.score(Xtest,Ytest))
+        svm_in_score_ls.append(model.score(Xtrain,Ytrain))
+        
+    svm_time_a = []
+    svm_out_score_a = []
+    svm_in_score_a = []
     
-    timefit(model_sgd,args=(Xtrain,Ytrain))
+    for alpha in alpha_:
+        model = SGDClassifier(loss = 'hinge',
+                                  alpha = alpha,
+                                  learning_rate = 'optimal',
+                                  early_stopping = True,
+                                  random_state = seed)
+
+
+        vPrint(f'LinearSVC: {model} fitting...')
+        svm_time_a.append(timefit(model,args=(Xtrain,Ytrain)))
+        vPrint(f'SGDClassifier: {model} fitting...')
+        
+        timefit(model,args=(Xtrain,Ytrain))
+        
+        svm_out_score_a.append(model.score(Xtest,Ytest))
+        svm_in_score_a.append(model.score(Xtrain,Ytrain))
+        
+    #######################
+    # Create plot
+    #######################
+    # Loss for lr_
+    ax[0][0].set_xlabel('Loss Function')
+    ax[0][0].set_ylabel('Score')
+    ax[0][0].grid()
+    ax[0][0].legend()
+    # Validation for lr_
+    ax[0][1].set_xlabel('Alpha')
+    ax[0][1].set_ylabel('Score')
+    ax[0][1].grid()
+    ax[0][1].legend()
+
+###############################################################################
+# Setup GridSeachCV for MLP
+###############################################################################
+    if run_grid_search:
+        estimator =SGDClassifier(learning_rate = 'optimal',
+                                 early_stopping = True,
+                                 random_state = seed)
+        
+        vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
+        
+        param_grid = {
+            'alpha':alpha_,
+            'loss':loss_,
+            }
+        
+        fold = []
+        for i in range(Xdata.shape[0]):
+            if Xdata.index[i] in Xtrain.index:
+                fold.append(-1)
+            else:
+                fold.append(0)
+                
+        ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        
+        clf = model_selection.GridSearchCV(estimator=estimator, 
+                                           param_grid = param_grid, 
+                                           verbose=3 if verbose else 0,
+                                           scoring = 'accuracy',
+                                           n_jobs = -1,
+                                           return_train_score = True,
+                                           cv=ps,
+                                           )
     
-    svm_out_score_.append(model.score(Xtest,Ytest))
-    svm_in_score_.append(model.score(Xtrain,Ytrain))
+        clf.fit(Xdata,Ydata)
     
-    
-# =============================================================================
-#     #######################
-#     # Create plot
-#     #######################
-#         
-#     fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
-#     ax00 = ax[0][0].twinx()
-#     l1 = ax[0][0].plot(ks,knn_score_in_,label='Training Score')
-#     l2 = ax[0][0].plot(ks,knn_score_out_,label='Test Score')
-#     l3 = ax00.plot()
-#     ls = l1+ l2
-#     lb = [l.get_label() for l in ls]
-#     ax[0][0].set_xlabel('Neighbors')
-#     ax[0][0].set_ylabel('Score')
-#     ax[0][0].grid()
-#     ax[0][0].legend(ls,lb,loc=0)
-#     
-#     l1 = ax[0][1].plot(ls_,knn_score_in_ls,label='Training Score')
-#     l2 = ax[0][1].plot(ls_,knn_score_out_ls,label='Test Score')
-#     ls = l1+ l2
-#     lb = [l.get_label() for l in ls]
-#     ax[0][1].set_xlabel(f'Leaf Size (k={n_neighbors}')
-#     ax[0][1].set_ylabel('Score')
-#     ax[0][1].grid()
-#     ax[0][1].legend(ls,lb,loc=0)
-#     
-#     fig.tight_layout()
-#     plt.suptitle(f'KNN - {DataSetName}\n')
-#     plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
-#     plt.show() # Save fig
-# 
-# ax00 = ax[0][0].twinx()
-# l1 = ax[0][0].plot(n_estimators_,dt_boost_score_in_n,label='Training Score')
-# l2 = ax[0][0].plot(n_estimators_,dt_boost_score_out_n,label='Test Score')
-# l3 = ax00.plot(n_estimators_,dt_boost_time_n,'k--',label='Training Time')
-# ax00.set_ylabel('Training Time (seconds)')
-# ls = l1+ l2 + l3
-# lb = [l.get_label() for l in ls]
-# ax[0][0].set_xlabel('n_estimators')
-# ax[0][0].set_ylabel('Score')
-# ax[0][0].grid()
-# ax[0][0].legend(ls,lb,loc=0)
-# 
-# =============================================================================
+        vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+        
+        ### ADD TO PLOT ###
+        # Add to loss curve plots
+        ax[0][0].plot(clf.s.loss_curve_,'k-',label='Best Estimator')
+        ax[1][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
+        ax[0][0].legend()
+        ax[1][0].legend()
+        # Add to validation curve plots
+        ax[0][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[1][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[0][1].legend()
+        ax[1][1].legend()
+        
+    fig.tight_layout()
+    plt.suptitle(f'SGDClassifier - {DataSetName}\n')
+    plt.savefig(f'Images/SGD_Classifier_{DataSetName}_Figure.png')
+    plt.show() # Save fig
+
+
 ###############################################################################
 # KNN - K-Nearest Neighbors
 ###############################################################################
