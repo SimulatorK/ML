@@ -62,7 +62,7 @@ datasets = {
     }
 
 #Train Test Split for all experiments 
-test_size = 0.2
+test_size = 0.1
 
 # Verbosity level
 verbose = True
@@ -844,7 +844,7 @@ for DataSetName, ds in datasets.items():
     
     loss_ = ['hinge', 'modified_huber', 'squared_hinge', 'perceptron',
              'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive']
-    alpha_ = np.linspace(0.0001,0.0005,5)
+    alpha_ = np.linspace(0.0001,0.001,20)
     
     # Start Plot
     fig, ax =  plt.subplots(1,2,figsize=(12,10),dpi=200)
@@ -894,15 +894,24 @@ for DataSetName, ds in datasets.items():
     # Create plot
     #######################
     # Loss for lr_
-    ax[0][0].set_xlabel('Loss Function')
-    ax[0][0].set_ylabel('Score')
-    ax[0][0].grid()
-    ax[0][0].legend()
-    # Validation for lr_
-    ax[0][1].set_xlabel('Alpha')
-    ax[0][1].set_ylabel('Score')
-    ax[0][1].grid()
-    ax[0][1].legend()
+    ax[0].plot(loss_,svm_out_score_ls,'ro',label='Test Score')
+    ax[0].plot(loss_,svm_in_score_ls,'bo',label='Training Score')
+    
+    ax[0].set_xticklabels(loss_,rotation=90)
+    ax[0].set_xlabel('Loss Function')
+    ax[0].set_ylabel('Score')
+    ax[0].grid()
+    ax[0].legend()
+    # Validation for alpha_
+    ax1 = ax[1].twinx()
+    ax[1].plot(alpha_,svm_out_score_a,label='Test Score')
+    ax[1].plot(alpha_,svm_in_score_a,label='Training Score')
+    ax[1].set_xticks(alpha_)
+    ax[1].set_xticklabels(alpha_.round(5),rotation=45)
+    ax[1].set_xlabel('Alpha')
+    ax[1].set_ylabel('Score')
+    ax[1].grid()
+    ax[1].legend()
 
 ###############################################################################
 # Setup GridSeachCV for MLP
@@ -943,15 +952,10 @@ for DataSetName, ds in datasets.items():
         
         ### ADD TO PLOT ###
         # Add to loss curve plots
-        ax[0][0].plot(clf.s.loss_curve_,'k-',label='Best Estimator')
-        ax[1][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
-        ax[0][0].legend()
-        ax[1][0].legend()
-        # Add to validation curve plots
-        ax[0][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
-        ax[1][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
-        ax[0][1].legend()
-        ax[1][1].legend()
+        ax[0].plot(clf.best_estimator_.loss,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1].plot(clf.best_estimator_.alpha,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0].legend()
+        ax[1].legend()
         
     fig.tight_layout()
     plt.suptitle(f'SGDClassifier - {DataSetName}\n')
@@ -964,10 +968,11 @@ for DataSetName, ds in datasets.items():
 ###############################################################################
 
 # =============================================================================
-# def experiment4():
+# def experiment5():
 # =============================================================================
 ks = list(map(int,np.linspace(1,20,10)))
-ls_ = list(map(int,np.linspace(2,50,10)))
+w_ = ['uniform','distance']
+algo_ = ['ball_tree','kd_tree','brute']
 
 vPrint('Starting experiment 5')
 for DataSetName, ds in datasets.items():
@@ -1011,45 +1016,63 @@ for DataSetName, ds in datasets.items():
     knn_score_in_ls = []
     knn_score_out_ls = []
     
-    for leaf_size in ls_:
-        n_neighbors = 10
-        model = KNeighborsClassifier(n_neighbors = n_neighbors,
-                                     leaf_size = leaf_size,
-                                     n_jobs=-1, # Specify using all cpus for query
-                                     )
-        timefit(model,args=(Xtrain,Ytrain))
-        knn_score_in_ls.append(model.score(Xtrain,Ytrain))
-        knn_score_out_ls.append(model.score(Xtest,Ytest))
-        
-    
     #######################
     # Create plot
     #######################
         
-    fig, ax =  plt.subplots(2,2,figsize=(12,10),dpi=200)
-    l1 = ax[0][0].plot(ks,knn_score_in_,label='Training Score')
-    l2 = ax[0][0].plot(ks,knn_score_out_,label='Test Score')
-    ls = l1+ l2
-    lb = [l.get_label() for l in ls]
-    ax[0][0].set_xlabel('Neighbors')
-    ax[0][0].set_ylabel('Score')
-    ax[0][0].grid()
-    ax[0][0].legend(ls,lb,loc=0)
+    fig, ax =  plt.subplots(figsize=(12,10),dpi=200)
+    ax.plot(ks,knn_score_in_,label='Training Score')
+    ax.plot(ks,knn_score_out_,label='Test Score')
+    ax.set_xlabel('Neighbors')
+    ax.set_ylabel('Score')
+    ax.grid()
     
-    l1 = ax[0][1].plot(ls_,knn_score_in_ls,label='Training Score')
-    l2 = ax[0][1].plot(ls_,knn_score_out_ls,label='Test Score')
-    ls = l1+ l2
-    lb = [l.get_label() for l in ls]
-    ax[0][1].set_xlabel(f'Leaf Size (k={n_neighbors}')
-    ax[0][1].set_ylabel('Score')
-    ax[0][1].grid()
-    ax[0][1].legend(ls,lb,loc=0)
     
+###############################################################################
+# Setup GridSeachCV for KNN
+###############################################################################
+    if run_grid_search:
+        estimator = KNeighborsClassifier(
+                                 n_jobs = -1,
+                                 )
+        
+        vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
+        
+        param_grid = {
+            'n_neighbors':ks,
+            'weights':w_,
+            'algorithm':algo_,
+            }
+        
+        fold = []
+        for i in range(Xdata.shape[0]):
+            if Xdata.index[i] in Xtrain.index:
+                fold.append(-1)
+            else:
+                fold.append(0)
+                
+        ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
+        
+        clf = model_selection.GridSearchCV(estimator=estimator, 
+                                           param_grid = param_grid, 
+                                           verbose=3 if verbose else 0,
+                                           scoring = 'accuracy',
+                                           n_jobs = -1,
+                                           return_train_score = True,
+                                           cv=ps,
+                                           )
+    
+        clf.fit(Xdata,Ydata)
+    
+        vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
+
+        # Add to plot
+        ax.plot(clf.best_estimator_.n_neighbors,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax.legend()
+
     fig.tight_layout()
     plt.suptitle(f'KNN - {DataSetName}\n')
     plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
     plt.show() # Save fig
-
-
-
+    
 
