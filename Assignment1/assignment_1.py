@@ -23,7 +23,6 @@ from sklearn.neural_network import MLPClassifier
 # KNN
 from sklearn.neighbors import KNeighborsClassifier
 # Support Vector Machine - SVM
-from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 
 import os
@@ -39,7 +38,13 @@ seed = 903860493
 
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
-
+# =============================================================================
+#     
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-v','--verbose',type=bool,default=True,dest='verbose',required=False)
+#     
+# =============================================================================
+    
 ## Select Data Sets
 creditDefaultFile = r"data/default of credit card clients.xls"
 roomOccupancyFile = r"data/Occupancy_Estimation.csv"
@@ -66,7 +71,10 @@ test_size = 0.1
 
 # Verbosity level
 verbose = True
-run_grid_search = False
+run_grid_search = True
+
+# Run n_jobs in parallel
+n_jobs = - int(os.cpu_count() / 2)
 
 ###############################################################################
 # Helper Functions
@@ -85,6 +93,16 @@ def timefit(model,args,verbose: bool = True):
     t = f'{model}: Fit Time: {st} seconds'
     vPrint(t,verbose)
     return inter
+
+def timescore(model,args,verbose: bool = True):
+    start = time()
+    score = model.score(*args)
+    end = time()
+    inter = end - start
+    st = '{:,.6}'.format(inter)
+    t = f'{model}: Score Time: {st} seconds'
+    vPrint(t,verbose)
+    return inter, score
 
 def processData(Xdata):
     ## PRE-PROCESS ALL DATA
@@ -138,7 +156,9 @@ for DataSetName, ds in datasets.items():
         le = preprocessing.LabelEncoder()
         scaler = preprocessing.MinMaxScaler()
         Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
-        Xdata.iloc[:,col] = scaler.fit_transform(np.array(Xdata.iloc[:,col]).reshape(-1,1))
+# =============================================================================
+#         Xdata.iloc[:,col] = scaler.fit_transform(np.array(Xdata.iloc[:,col]).reshape(-1,1))
+# =============================================================================
     
     pca = PCA()
     pca.fit_transform(Xdata)
@@ -379,7 +399,7 @@ for DataSetName, ds in datasets.items():
     l1 = ax[2][0].plot(ccp_alphas,dt_in_scores_random_ccp,label='Training Score')
     l2 = ax[2][0].plot(ccp_alphas,dt_out_scores_random_ccp,label='Test Score')
     l3 = ax20.plot(ccp_alphas,dt_rand_time_ccp,'k--',label='Training Time')
-    ax11.set_ylabel('Training Time (seconds)')
+    ax20.set_ylabel('Training Time (seconds)')
     ls = l1 + l2 + l3
     lb = [l.get_label() for l in ls]
     ax[2][0].set_xlabel(f'CCP_Alpha')
@@ -392,7 +412,7 @@ for DataSetName, ds in datasets.items():
     l1 = ax[2][1].plot(ccp_alphas,dt_in_scores_best_ccp,label='Training Score')
     l2 = ax[2][1].plot(ccp_alphas,dt_out_scores_best_ccp,label='Test Score')
     l3 = ax21.plot(ccp_alphas,dt_best_time_ccp,'k--',label='Training Time')
-    ax11.set_ylabel('Training Time (seconds)')
+    ax21.set_ylabel('Training Time (seconds)')
     ls = l1 + l2 + l3
     lb = [l.get_label() for l in ls]
     ax[2][1].set_xlabel(f'CCP_Alpha')
@@ -400,10 +420,6 @@ for DataSetName, ds in datasets.items():
     ax[2][1].grid()
     ax[2][1].legend(ls,lb,loc=0)
     
-    fig.tight_layout()
-    plt.suptitle(f'Decision Tree - {DataSetName}\n')
-    plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
-    plt.show() # Save fig
 
 ###############################################################################
 # Setup GridSeachCV for Decision Tree with Pruning for each dataset
@@ -411,7 +427,6 @@ for DataSetName, ds in datasets.items():
     if run_grid_search:
         estimator = DecisionTreeClassifier(random_state = seed) 
         vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
-    
         param_grid = {
             'min_samples_leaf':min_samples,
             'max_depth':max_depths,
@@ -432,7 +447,7 @@ for DataSetName, ds in datasets.items():
                                            param_grid = param_grid, 
                                            verbose=3 if verbose else 0,
                                            scoring = 'accuracy',
-                                           n_jobs = -1,
+                                           n_jobs = n_jobs,
                                            return_train_score = True,
                                            cv=ps,
                                            )
@@ -444,6 +459,21 @@ for DataSetName, ds in datasets.items():
         clf.score(Xtest,Ytest)
         clf.score(Xtrain,Ytrain)
         
+        best_estimator = clf.best_estimator_
+        
+        # Add to plot
+        ax[0][0].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][1].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][0].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][1].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[2][0].plot(best_estimator.ccp_alpha,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[2][1].plot(best_estimator.ccp_alpha,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        
+    
+    fig.tight_layout()
+    plt.suptitle(f'Decision Tree - {DataSetName}\n')
+    plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
+    plt.show() # Save fig
     
 ###############################################################################
 # Decision Tree with boosting using GBC
@@ -624,10 +654,6 @@ for DataSetName, ds in datasets.items():
     ax[1][1].grid()
     ax[1][1].legend(ls,lb,loc=0)
     
-    fig.tight_layout()
-    plt.suptitle(f'Boosted Tree - {DataSetName}\n')
-    plt.savefig(f'Images/BoostedTreeClassifier_{DataSetName}_Figure.png')
-    plt.show() # Save fig
 
 ###############################################################################
 # Setup GridSeachCV for Decision Tree with Boosting for each dataset
@@ -656,7 +682,7 @@ for DataSetName, ds in datasets.items():
                                            param_grid = param_grid, 
                                            verbose=3 if verbose else 0,
                                            scoring = 'accuracy',
-                                           n_jobs = -1,
+                                           n_jobs = n_jobs,
                                            return_train_score = True,
                                            cv=ps,
                                            )
@@ -665,6 +691,19 @@ for DataSetName, ds in datasets.items():
     
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
         
+        best_estimator = clf.best_estimator_
+        # Add to plot
+        ax[0][0].plot(best_estimator.n_estimators,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][1].plot(best_estimator.learning_rate,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][0].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][1].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        
+        
+    
+    fig.tight_layout()
+    plt.suptitle(f'Boosted Tree - {DataSetName}\n')
+    plt.savefig(f'Images/BoostedTreeClassifier_{DataSetName}_Figure.png')
+    plt.show() # Save fig
 ###############################################################################
 # Neural Network - Using Multi-Layer Perceptron MLP Classifier
 ###############################################################################
@@ -683,7 +722,9 @@ for DataSetName, ds in datasets.items():
     ## PRE-PROCESS ALL DATA
     for col in range(Xdata.shape[1]):
         le = preprocessing.LabelEncoder()
+        scaler = preprocessing.MinMaxScaler()
         Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+        Xdata.iloc[:,col] = scaler.fit_transform(np.array(Xdata.iloc[:,col]).reshape(-1,1))
         
     # Split data (set random seed)
     Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
@@ -789,7 +830,7 @@ for DataSetName, ds in datasets.items():
                                            param_grid = param_grid, 
                                            verbose=3 if verbose else 0,
                                            scoring = 'accuracy',
-                                           n_jobs = -1,
+                                           n_jobs = n_jobs,
                                            return_train_score = True,
                                            cv=ps,
                                            )
@@ -941,7 +982,7 @@ for DataSetName, ds in datasets.items():
                                            param_grid = param_grid, 
                                            verbose=3 if verbose else 0,
                                            scoring = 'accuracy',
-                                           n_jobs = -1,
+                                           n_jobs = n_jobs,
                                            return_train_score = True,
                                            cv=ps,
                                            )
@@ -1033,7 +1074,7 @@ for DataSetName, ds in datasets.items():
 ###############################################################################
     if run_grid_search:
         estimator = KNeighborsClassifier(
-                                 n_jobs = -1,
+                                 n_jobs = n_jobs,
                                  )
         
         vPrint(f'Starting parameter grid search for {estimator}: {DataSetName}\n')
@@ -1057,7 +1098,7 @@ for DataSetName, ds in datasets.items():
                                            param_grid = param_grid, 
                                            verbose=3 if verbose else 0,
                                            scoring = 'accuracy',
-                                           n_jobs = -1,
+                                           n_jobs = n_jobs,
                                            return_train_score = True,
                                            cv=ps,
                                            )
