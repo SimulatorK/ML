@@ -33,49 +33,8 @@ import matplotlib.pyplot as plt
 import random
 from time import time
 
-# Load data sets
-seed = 903860493
 
-if __name__ == '__main__':
-    os.chdir(os.path.split(__file__)[0])
-# =============================================================================
-#     
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('-v','--verbose',type=bool,default=True,dest='verbose',required=False)
-#     
-# =============================================================================
-    
-## Select Data Sets
-creditDefaultFile = r"data/default of credit card clients.xls"
-roomOccupancyFile = r"data/Occupancy_Estimation.csv"
-mushroomClassificationFile = r"data\secondary+mushroom+dataset\MushroomDataset\secondary_data.csv"
-studentDropoutfile = r"data\predict+students+dropout+and+academic+success\data.csv"
-
-creditDefaultFile = os.path.join(os.getcwd(),creditDefaultFile)
-roomOccupancyFile = os.path.join(os.getcwd(),roomOccupancyFile)
-
-ds1 = pd.read_excel(creditDefaultFile,skiprows=1)
-ds2 = pd.read_csv(roomOccupancyFile)
-ds3 = pd.read_csv(mushroomClassificationFile)
-ds4 = pd.read_csv(studentDropoutfile)
-
-datasets = {
-    'Credit Default':ds1,
-    #'Room Occupancy':ds2,
-    'Mushroom Classification':ds3,
-    #'Student Dropout':ds4,
-    }
-
-#Train Test Split for all experiments 
-test_size = 0.1
-
-# Verbosity level
 verbose = True
-run_grid_search = True
-
-# Run n_jobs in parallel
-n_jobs = - int(os.cpu_count() / 2)
-
 ###############################################################################
 # Helper Functions
 ###############################################################################
@@ -125,6 +84,53 @@ def processData(Xdata):
     Xdata = Xdata.iloc[:,:i+1]
     
     return Xdata
+
+# Load data sets
+seed = 903860493
+
+if __name__ == '__main__':
+    os.chdir(os.path.split(__file__)[0])
+# =============================================================================
+#     
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-v','--verbose',type=bool,default=True,dest='verbose',required=False)
+#     
+# =============================================================================
+    
+## Select Data Sets
+creditDefaultFile = r"data/default of credit card clients.xls"
+roomOccupancyFile = r"data/Occupancy_Estimation.csv"
+mushroomClassificationFile = r"data\secondary+mushroom+dataset\MushroomDataset\secondary_data.csv"
+studentDropoutfile = r"data\predict+students+dropout+and+academic+success\data.csv"
+
+creditDefaultFile = os.path.join(os.getcwd(),creditDefaultFile)
+roomOccupancyFile = os.path.join(os.getcwd(),roomOccupancyFile)
+
+ds1 = pd.read_excel(creditDefaultFile,skiprows=1)
+ds2 = pd.read_csv(roomOccupancyFile)
+ds3 = pd.read_csv(mushroomClassificationFile)
+ds4 = pd.read_csv(studentDropoutfile)
+
+datasets = {
+    'Credit Default':ds1,
+    #'Room Occupancy':ds2,
+    'Mushroom Classification':ds3,
+    #'Student Dropout':ds4,
+    }
+
+#Train Test Split for all experiments 
+test_size = 0.1
+
+# Verbosity level
+run_grid_search = True
+
+# Run n_jobs in parallel
+n_jobs = -8
+
+cores = min(n_jobs,os.cpu_count()) if n_jobs > 0 else max(1,os.cpu_count() + n_jobs) 
+
+vPrint(f'Using {cores} cores to process')
+
 
 ################0###############################################################
 # Decision Tree Test
