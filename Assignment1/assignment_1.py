@@ -1048,7 +1048,7 @@ for DataSetName, ds in datasets.items():
     for k in ks:
         
         model = KNeighborsClassifier(n_neighbors=k,
-                                     n_jobs=-1, # Specify using all cpus for query
+                                     n_jobs=n_jobs, # Specify using all cpus for query
                                      )
         timefit(model,args=(Xtrain,Ytrain))
         start = time()
