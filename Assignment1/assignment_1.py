@@ -465,15 +465,16 @@ for DataSetName, ds in datasets.items():
         clf.score(Xtest,Ytest)
         clf.score(Xtrain,Ytrain)
         
-        best_estimator = clf.best_estimator_
-        
+        best_estimator_ = clf.best_estimator_
+        best_estimator_.fit(Xtrain,Ytrain)
+
         # Add to plot
-        ax[0][0].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[0][1].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][0].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][1].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[2][0].plot(best_estimator.ccp_alpha,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[2][1].plot(best_estimator.ccp_alpha,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][0].plot(best_estimator_.min_samples_leaf,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][1].plot(best_estimator_.min_samples_leaf,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][0].plot(best_estimator_.max_depth,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][1].plot(best_estimator_.max_depth,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[2][0].plot(best_estimator_.ccp_alpha,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[2][1].plot(best_estimator_.ccp_alpha,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
         
     
     fig.tight_layout()
@@ -697,12 +698,14 @@ for DataSetName, ds in datasets.items():
     
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
         
-        best_estimator = clf.best_estimator_
+        best_estimator_ = clf.best_estimator_
+        best_estimator_.fit(Xtrain,Ytrain)
+
         # Add to plot
-        ax[0][0].plot(best_estimator.n_estimators,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[0][1].plot(best_estimator.learning_rate,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][0].plot(best_estimator.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][1].plot(best_estimator.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][0].plot(best_estimator_.n_estimators,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][1].plot(best_estimator_.learning_rate,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][0].plot(best_estimator_.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][1].plot(best_estimator_.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
         
         
     
@@ -843,17 +846,20 @@ for DataSetName, ds in datasets.items():
     
         clf.fit(Xdata,Ydata)
     
+        best_estimator_ = clf.best_estimator_
+        best_estimator_.fit(Xtrain,Ytrain)
+
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
         
         ### ADD TO PLOT ###
         # Add to loss curve plots
-        ax[0][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
-        ax[1][0].plot(clf.best_estimator_.loss_curve_,'k-',label='Best Estimator')
+        ax[0][0].plot(best_estimator_.loss_curve_,'k-',label='Best Estimator')
+        ax[1][0].plot(best_estimator_.loss_curve_,'k-',label='Best Estimator')
         ax[0][0].legend()
         ax[1][0].legend()
         # Add to validation curve plots
-        ax[0][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
-        ax[1][1].plot(clf.best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[0][1].plot(best_estimator_.validation_scores_,'k-',label='Best Estimator')
+        ax[1][1].plot(best_estimator_.validation_scores_,'k-',label='Best Estimator')
         ax[0][1].legend()
         ax[1][1].legend()
 
@@ -997,10 +1003,13 @@ for DataSetName, ds in datasets.items():
     
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
         
+        best_estimator_ = clf.best_estimator_
+        best_estimator_.fit(Xtrain,Ytrain)
+
         ### ADD TO PLOT ###
         # Add to loss curve plots
-        ax[0].plot(clf.best_estimator_.loss,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1].plot(clf.best_estimator_.alpha,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0].plot(best_estimator_.loss,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1].plot(best_estimator_.alpha,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
         ax[0].legend()
         ax[1].legend()
         
@@ -1025,8 +1034,8 @@ vPrint('Starting experiment 5')
 for DataSetName, ds in datasets.items():
     
     ## Get X, Y data for test and train
-    Xdata = ds.iloc[:,1:-1]
-    Ydata = ds.iloc[:,-1]
+    Xdata = ds3.iloc[:,1:-1]
+    Ydata = ds3.iloc[:,-1]
     
     ## PRE-PROCESS ALL DATA
     for col in range(Xdata.shape[1]):
@@ -1096,8 +1105,8 @@ for DataSetName, ds in datasets.items():
             if Xdata.index[i] in Xtrain.index:
                 fold.append(-1)
             else:
-                fold.append(0)
-                
+                fold.append(1)
+        
         ps = model_selection.PredefinedSplit(fold) # Fix the fold on the train data
         
         clf = model_selection.GridSearchCV(estimator=estimator, 
@@ -1110,11 +1119,14 @@ for DataSetName, ds in datasets.items():
                                            )
     
         clf.fit(Xdata,Ydata)
-    
+        
         vPrint(f'GridSearchCV Complete for {DataSetName} using {estimator}.')
 
+        best_estimator_ = clf.best_estimator_
+        best_estimator_.fit(Xtrain,Ytrain)
+
         # Add to plot
-        ax.plot(clf.best_estimator_.n_neighbors,clf.best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax.plot(best_estimator_.n_neighbors,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
         ax.legend()
 
     fig.tight_layout()
