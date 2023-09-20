@@ -118,6 +118,20 @@ datasets = {
     #'Student Dropout':ds4,
     }
 
+## ** DS1 is sparse with defaulters so lets randomly balance
+ds1_p = random.choices(ds1.loc[(ds1['default payment next month'] == 0)].index,k=len(ds1.loc[(ds1['default payment next month'] == 1)]))
+ds1_d = ds1.loc[(ds1['default payment next month'] == 1)].index
+# =============================================================================
+# 
+# ds1_i = []
+# ds1_i.extend(list(ds1_p))
+# ds1_i.extend(list(ds1_d))
+# 
+# # Reset ds1.index 
+# ds1 = ds1.iloc[ds1_i]
+# datasets['Credit Default'] = ds1
+# =============================================================================
+
 #Train Test Split for all experiments 
 test_size = 0.1
 
@@ -125,11 +139,11 @@ test_size = 0.1
 run_grid_search = True
 
 # Run n_jobs in parallel
-n_jobs = -8
+n_jobs = 10
 
 cores = min(n_jobs,os.cpu_count()) if n_jobs > 0 else max(1,os.cpu_count() + n_jobs) 
-
-vPrint(f'Using {cores} cores to process')
+cores_ = f'{cores} cores' if cores > 1 else '1 core'
+vPrint(f'Using {cores_} to process')
 
 
 ################0###############################################################
@@ -153,8 +167,8 @@ for DataSetName, ds in datasets.items():
 
         
     ## Get X, Y data for test and train
-    Xdata = ds.iloc[:,1:-1]
-    Ydata = ds.iloc[:,-1]
+    Xdata = ds1.iloc[:,1:-1]
+    Ydata = ds1.iloc[:,-1]
     
     ## PRE-PROCESS ALL DATA
     
@@ -702,10 +716,10 @@ for DataSetName, ds in datasets.items():
         best_estimator_.fit(Xtrain,Ytrain)
 
         # Add to plot
-        ax[0][0].plot(best_estimator_.n_estimators,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[0][1].plot(best_estimator_.learning_rate,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][0].plot(best_estimator_.max_depth,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax[1][1].plot(best_estimator_.min_samples_leaf,best_estimator.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][0].plot(best_estimator_.n_estimators,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0][1].plot(best_estimator_.learning_rate,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][0].plot(best_estimator_.max_depth,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1][1].plot(best_estimator_.min_samples_leaf,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
         
         
     
@@ -722,6 +736,7 @@ for DataSetName, ds in datasets.items():
 # =============================================================================
 vPrint('Starting experiment 3')
 max_iter = 1000
+n_iter_no_change = 20
 for DataSetName, ds in datasets.items():
     
     ## Get X, Y data for test and train
@@ -758,6 +773,7 @@ for DataSetName, ds in datasets.items():
                               early_stopping = True,
                               hidden_layer_sizes = (100,),
                               max_iter = max_iter,
+                              n_iter_no_change = n_iter_no_change,
                               random_state = seed)
     
         t = timefit(model,(Xtrain,Ytrain))
@@ -780,6 +796,8 @@ for DataSetName, ds in datasets.items():
         model = MLPClassifier(learning_rate_init=0.0005,
                               early_stopping = True,
                               hidden_layer_sizes = (n_h_,),
+                              max_iter = max_iter,
+                              n_iter_no_change = n_iter_no_change,
                               random_state = seed)
         
         t = timefit(model,(Xtrain,Ytrain))
@@ -919,8 +937,8 @@ for DataSetName, ds in datasets.items():
         
         timefit(model,args=(Xtrain,Ytrain))
         
-        svm_out_score_ls.append(model.score(Xtest,Ytest))
-        svm_in_score_ls.append(model.score(Xtrain,Ytrain))
+        svm_out_score_ls.append(timescore(model,args=(Xtest,Ytest))[1])
+        svm_in_score_ls.append(timescore(model,args=(Xtrain,Ytrain))[1])
         
     svm_time_a = []
     svm_out_score_a = []
@@ -1029,13 +1047,14 @@ for DataSetName, ds in datasets.items():
 ks = list(map(int,np.linspace(1,20,10)))
 w_ = ['uniform','distance']
 algo_ = ['ball_tree','kd_tree','brute']
+p_ = np.linspace(1,5,13)
 
 vPrint('Starting experiment 5')
 for DataSetName, ds in datasets.items():
     
     ## Get X, Y data for test and train
-    Xdata = ds3.iloc[:,1:-1]
-    Ydata = ds3.iloc[:,-1]
+    Xdata = ds.iloc[:,1:-1]
+    Ydata = ds.iloc[:,-1]
     
     ## PRE-PROCESS ALL DATA
     for col in range(Xdata.shape[1]):
@@ -1066,22 +1085,41 @@ for DataSetName, ds in datasets.items():
         knn_score_out_.append(model.score(Xtest,Ytest))
         end2 = time()
         
-        query_time_in.append(end-start)
-        query_time_out.append(end2-end)
+    knn_score_in_p = []
+    knn_score_out_p = []
+    
+    for p in p_:
         
-    knn_score_in_ls = []
-    knn_score_out_ls = []
+        model = KNeighborsClassifier(n_neighbors=10,
+                                     n_jobs=n_jobs, # Specify using all cpus for query
+                                     p = p
+                                     )
+        
+        timefit(model,args=(Xtrain,Ytrain))
+        start = time()
+        knn_score_in_p.append(timescore(model,args=(Xtrain,Ytrain))[1])
+        end = time()
+        knn_score_out_p.append(timescore(model,args=(Xtest,Ytest))[1])
+        end2 = time()
+        
     
     #######################
     # Create plot
     #######################
         
-    fig, ax =  plt.subplots(figsize=(12,10),dpi=200)
-    ax.plot(ks,knn_score_in_,label='Training Score')
-    ax.plot(ks,knn_score_out_,label='Test Score')
-    ax.set_xlabel('Neighbors')
-    ax.set_ylabel('Score')
-    ax.grid()
+    fig, ax =  plt.subplots(1,2,figsize=(12,10),dpi=200)
+    ax[0].plot(ks,knn_score_in_,label='Training Score')
+    ax[0].plot(ks,knn_score_out_,label='Test Score')
+    ax[0].set_xlabel('Neighbors')
+    ax[0].set_ylabel('Score')
+    ax[0].grid()
+    
+    ax[1].plot(p_,knn_score_in_p,label='Training Score')
+    ax[1].plot(p_,knn_score_out_p,label='Test Score')
+    ax[1].set_xlabel('Power Parameter (p)')
+    ax[1].set_ylabel('Score')
+    ax[1].grid()
+    
     
     
 ###############################################################################
@@ -1098,6 +1136,7 @@ for DataSetName, ds in datasets.items():
             'n_neighbors':ks,
             'weights':w_,
             'algorithm':algo_,
+            'p':p_,
             }
         
         fold = []
@@ -1126,8 +1165,10 @@ for DataSetName, ds in datasets.items():
         best_estimator_.fit(Xtrain,Ytrain)
 
         # Add to plot
-        ax.plot(best_estimator_.n_neighbors,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
-        ax.legend()
+        ax[0].plot(best_estimator_.n_neighbors,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[0].legend()
+        ax[1].plot(best_estimator_.p,best_estimator_.score(Xtest,Ytest),'k*',label='Best Estimator')
+        ax[1].legend()
 
     fig.tight_layout()
     plt.suptitle(f'KNN - {DataSetName}\n')
