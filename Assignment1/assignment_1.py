@@ -167,8 +167,8 @@ for DataSetName, ds in datasets.items():
 
         
     ## Get X, Y data for test and train
-    Xdata = ds1.iloc[:,1:-1]
-    Ydata = ds1.iloc[:,-1]
+    Xdata = ds.iloc[:,1:-1]
+    Ydata = ds.iloc[:,-1]
     
     ## PRE-PROCESS ALL DATA
     
