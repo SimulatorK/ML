@@ -139,7 +139,7 @@ test_size = 0.1
 run_grid_search = True
 
 # Run n_jobs in parallel
-n_jobs = 10
+n_jobs = -8
 
 cores = min(n_jobs,os.cpu_count()) if n_jobs > 0 else max(1,os.cpu_count() + n_jobs) 
 cores_ = f'{cores} cores' if cores > 1 else '1 core'
@@ -1047,7 +1047,7 @@ for DataSetName, ds in datasets.items():
 ks = list(map(int,np.linspace(1,20,10)))
 w_ = ['uniform','distance']
 algo_ = ['ball_tree','kd_tree','brute']
-p_ = np.linspace(1,5,13)
+p_ = list(map(int,np.linspace(1,5,5)))
 
 vPrint('Starting experiment 5')
 for DataSetName, ds in datasets.items():
@@ -1080,9 +1080,9 @@ for DataSetName, ds in datasets.items():
                                      )
         timefit(model,args=(Xtrain,Ytrain))
         start = time()
-        knn_score_in_.append(model.score(Xtrain,Ytrain))
+        knn_score_in_.append(timescore(model,args=(Xtrain,Ytrain))[1])
         end = time()
-        knn_score_out_.append(model.score(Xtest,Ytest))
+        knn_score_out_.append(timescore(model,args=(Xtest,Ytest))[1])
         end2 = time()
         
     knn_score_in_p = []
