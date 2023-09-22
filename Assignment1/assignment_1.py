@@ -133,7 +133,7 @@ ds1_d = ds1.loc[(ds1['default payment next month'] == 1)].index
 # =============================================================================
 
 #Train Test Split for all experiments 
-test_size = 0.1
+test_size = 0.2
 
 # Verbosity level
 run_grid_search = False
