@@ -136,10 +136,13 @@ ds1_d = ds1.loc[(ds1['default payment next month'] == 1)].index
 test_size = 0.1
 
 # Verbosity level
-run_grid_search = True
+run_grid_search = False
 
 # Run n_jobs in parallel
-n_jobs = -8
+n_jobs = 1
+
+# Savfigure flag
+savefig = False
 
 cores = min(n_jobs,os.cpu_count()) if n_jobs > 0 else max(1,os.cpu_count() + n_jobs) 
 cores_ = f'{cores} cores' if cores > 1 else '1 core'
@@ -493,7 +496,8 @@ for DataSetName, ds in datasets.items():
     
     fig.tight_layout()
     plt.suptitle(f'Decision Tree - {DataSetName}\n')
-    plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
+    if savefig:
+        plt.savefig(f'Images/DecisionTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
     
 ###############################################################################
@@ -725,7 +729,8 @@ for DataSetName, ds in datasets.items():
     
     fig.tight_layout()
     plt.suptitle(f'Boosted Tree - {DataSetName}\n')
-    plt.savefig(f'Images/BoostedTreeClassifier_{DataSetName}_Figure.png')
+    if savefig:
+        plt.savefig(f'Images/BoostedTreeClassifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 ###############################################################################
 # Neural Network - Using Multi-Layer Perceptron MLP Classifier
@@ -883,7 +888,8 @@ for DataSetName, ds in datasets.items():
 
     fig.tight_layout()
     plt.suptitle(f'Multi-Layer Perceptron Classifier - {DataSetName}\n')
-    plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
+    if savefig:
+        plt.savefig(f'Images/Multi-Layer_Perceptron_Classifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
     
 ###############################################################################
@@ -1033,7 +1039,8 @@ for DataSetName, ds in datasets.items():
         
     fig.tight_layout()
     plt.suptitle(f'SGDClassifier - {DataSetName}\n')
-    plt.savefig(f'Images/SGD_Classifier_{DataSetName}_Figure.png')
+    if savefig:
+        plt.savefig(f'Images/SGD_Classifier_{DataSetName}_Figure.png')
     plt.show() # Save fig
 
 
@@ -1172,7 +1179,8 @@ for DataSetName, ds in datasets.items():
 
     fig.tight_layout()
     plt.suptitle(f'KNN - {DataSetName}\n')
-    plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
+    if savefig:
+        plt.savefig(f'Images/KNN_{DataSetName}_Figure.png')
     plt.show() # Save fig
     
 
