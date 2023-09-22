@@ -136,13 +136,13 @@ ds1_d = ds1.loc[(ds1['default payment next month'] == 1)].index
 test_size = 0.2
 
 # Verbosity level
-run_grid_search = False
+run_grid_search = True
 
 # Run n_jobs in parallel
-n_jobs = 1
+n_jobs = -14
 
 # Savfigure flag
-savefig = False
+savefig = True
 
 cores = min(n_jobs,os.cpu_count()) if n_jobs > 0 else max(1,os.cpu_count() + n_jobs) 
 cores_ = f'{cores} cores' if cores > 1 else '1 core'
