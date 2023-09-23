@@ -13,31 +13,56 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import optimize
 from sklearn.datasets import make_classification
+import os
 
-from sklearn import cross_validation
 from sklearn.metrics import accuracy_score,f1_score
 import math
 
+## Import mlrose
+if __name__ == '__main__':
+    os.chdir(os.path.split(__file__)[0])
 
-## Blood caffeine concetration 
-# https://matheducators.stackexchange.com/questions/1550/optimization-problems-that-todays-students-might-actually-encounter
+os.chdir('../mlrose')
+from mlrose.mlrose.fitness import (OneMax, FlipFlop, FourPeaks, SixPeaks, ContinuousPeaks,
+                      Knapsack, TravellingSales, Queens, MaxKColor, 
+                      CustomFitness)
+from mlrose.mlrose.opt_probs import DiscreteOpt, ContinuousOpt, TSPOpt
+from mlrose.mlrose.decay import GeomDecay, ArithDecay, ExpDecay, CustomSchedule
+from mlrose.mlrose.algorithms import (hill_climb, random_hill_climb, simulated_annealing,
+                         genetic_alg, mimic)
+from mlrose.mlrose.neural import NeuralNetwork, LinearRegression, LogisticRegression
+os.chdir('../Assignment2')
 
-def caffeine(t, alpha1, beta1, dose1,
-             delay, alpha2, beta2, dose2):
-    
-    d1 = (dose1 / (1 - beta1/alpha1) ) * (np.exp(-beta1 * t) - np.exp(-alpha1 * t) ) 
+###############################################################################
 
-    t2 = t - delay
-    
-    if t2 > 0:
-        d2 = (dose2 / (1 - beta2/alpha2) ) * (np.exp(-beta2 * t2) - np.exp(-alpha2 * t2) ) 
-    else:
-        d2 = 0
+# Load Data
 
-    return d1 + d2
+fitness = Queens()
 
+# Define optimization problem object
+problem = DiscreteOpt(length = 8, fitness_fn = fitness, maximize=False, max_val=8)
 
+# Define decay schedule
+schedule = ExpDecay()
 
+# Solve using simulated annealing - attempt 1         
+init_state = np.array([0, 1, 2, 3, 4, 5, 6, 7])
+best_state, best_fitness = simulated_annealing(problem, schedule = schedule, max_attempts = 10, 
+                                                      max_iters = 1000, init_state = init_state,
+                                                      random_state = 1)
+
+print('The best state found is: ', best_state)
+
+print('The fitness at the best state is: ', best_fitness)
+
+# Solve using simulated annealing - attempt 2
+best_state, best_fitness = simulated_annealing(problem, schedule = schedule, max_attempts = 100, 
+                                                      max_iters = 1000, init_state = init_state,
+                                                      random_state = 1)
+
+print(best_state)
+
+print(best_fitness) 
 
 
 
