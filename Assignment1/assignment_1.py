@@ -101,7 +101,7 @@ if __name__ == '__main__':
 creditDefaultFile = r"data/default of credit card clients.xls"
 roomOccupancyFile = r"data/Occupancy_Estimation.csv"
 mushroomClassificationFile = r"data/secondary+mushroom+dataset/MushroomDataset/secondary_data.csv"
-studentDropoutfile = r"data\predict+students+dropout+and+academic+success\data.csv"
+studentDropoutfile = r"data/predict+students+dropout+and+academic+success/data.csv"
 
 creditDefaultFile = os.path.join(os.getcwd(),creditDefaultFile)
 roomOccupancyFile = os.path.join(os.getcwd(),roomOccupancyFile)
