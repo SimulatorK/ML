@@ -18,7 +18,7 @@ import random
 from sklearn.metrics import accuracy_score,f1_score
 import math
 import networkx as nx 
-
+import time
 ## Import mlrose
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
@@ -45,7 +45,7 @@ def vPrint(text: str = '', verbose: bool = verbose):
 ###############################################################################
 # Travelling Sales Optimization Problem
 ###############################################################################
-max_attempts = 100
+max_attempts = 1000
 n = 15 # Number of cities
 probConnect = 0.5
 useDistances = True
@@ -56,7 +56,7 @@ g = nx.erdos_renyi_graph(n, 0.5, seed=seed, directed=False)
 coords = list(g.edges)
 
 # Draw the city graph
-labels = {g.nodes[i]: f'City {i}' for i in range(n)}
+labels = {list(g.nodes)[i]: f'City {i}' for i in range(n)}
 
 fig = plt.subplots(figsize = (12,8), dpi = 200)
 nx.draw(g,labels = labels, with_labels=True)
@@ -70,43 +70,49 @@ problem = TSPOpt(length = len(coords), fitness_fn = fitness)
 # Define decay schedule
 schedule = ExpDecay()
 
-###############################################################################
+##################################
 # Solve using each algorithm
-###############################################################################
-
-# Random hill Climbing
+##################################
 fig = plt.subplots(figsize = (12,8), dpi = 200)
 
-best_state, best_fitness, fitness_curve = random_hill_climb(problem = problem,
+# Random hill Climbing
+best_state_rhc, best_fitness_rhc, fitness_curve_rhc = random_hill_climb(problem = problem,
                                                             max_attempts = max_attempts,
                                                             curve = True,
                                                             random_state = seed,
                                                             )
-plt.plot(fitness_curve,label='RHC')
+vPrint(f'RHC:\n\tBest State: {best_state_rhc}\n\tBest Fit: {best_fitness_rhc}\n')
+plt.plot(fitness_curve_rhc,'b-',label='RHC')
 
 # Simulated Annealing
-best_state, best_fitness, fitness_curve = simulated_annealing(problem = problem,
+best_state_sa, best_fitness_sa, fitness_curve_sa = simulated_annealing(problem = problem,
                                                             max_attempts = max_attempts,
                                                             curve = True,
                                                             random_state = seed,
                                                             )
-plt.plot(fitness_curve,label='SA')
+
+vPrint(f'SA:\n\tBest State: {best_state_sa}\n\tBest Fit: {best_fitness_sa}\n')
+plt.plot(fitness_curve_sa,label='SA')
 
 # Genetic Algorithm
-best_state, best_fitness, fitness_curve = genetic_alg(problem = problem,
+best_state_ga, best_fitness_ga, fitness_curve_ga = genetic_alg(problem = problem,
                                                       max_attempts = max_attempts,
                                                       curve = True,
                                                       random_state = seed,
                                                       )
-plt.plot(fitness_curve,label='GA')
+
+vPrint(f'GA:\n\tBest State: {best_state_ga}\n\tBest Fit: {best_fitness_ga}\n')
+plt.plot(fitness_curve_ga,label='GA')
 
 # MIMIC
-best_state, best_fitness, fitness_curve = mimic(problem = problem,
-                                                pop_size = 1000,
+best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
+                                                pop_size = 10000,
                                                 max_attempts = max_attempts,
                                                 curve = True,
                                                 random_state = seed,
                                                 )
+
+vPrint(f'MIMIC:\n\tBest State: {best_state_m}\n\tBest Fit: {best_fitness_m}\n')
 plt.plot(fitness_curve,label='MIMIC')
 
 
