@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 from scipy import optimize
 from sklearn.datasets import make_classification
 import os
-
+import random
 from sklearn.metrics import accuracy_score,f1_score
 import math
+import networkx as nx 
 
 ## Import mlrose
 if __name__ == '__main__':
@@ -34,39 +35,88 @@ from mlrose.mlrose.neural import NeuralNetwork, LinearRegression, LogisticRegres
 os.chdir('../Assignment2')
 
 ###############################################################################
+seed = 903860493
+verbose = True
 
-# Load Data
+def vPrint(text: str = '', verbose: bool = verbose):
+    if verbose:
+        print(text)
 
-fitness = Queens()
+###############################################################################
+# Travelling Sales Optimization Problem
+###############################################################################
+max_attempts = 100
+n = 15 # Number of cities
+probConnect = 0.5
+useDistances = True
 
-# Define optimization problem object
-problem = DiscreteOpt(length = 8, fitness_fn = fitness, maximize=False, max_val=8)
+# Create a connected graph to represent cities and routes
+
+g = nx.erdos_renyi_graph(n, 0.5, seed=seed, directed=False)
+coords = list(g.edges)
+
+# Draw the city graph
+labels = {g.nodes[i]: f'City {i}' for i in range(n)}
+
+fig = plt.subplots(figsize = (12,8), dpi = 200)
+nx.draw(g,labels = labels, with_labels=True)
+plt.savefig('TravellingSales_CityGraph.png')
+plt.show()
+
+fitness = TravellingSales(coords = coords)
+
+problem = TSPOpt(length = len(coords), fitness_fn = fitness)
 
 # Define decay schedule
 schedule = ExpDecay()
 
-# Solve using simulated annealing - attempt 1         
-init_state = np.array([0, 1, 2, 3, 4, 5, 6, 7])
-best_state, best_fitness = simulated_annealing(problem, schedule = schedule, max_attempts = 10, 
-                                                      max_iters = 1000, init_state = init_state,
-                                                      random_state = 1)
+###############################################################################
+# Solve using each algorithm
+###############################################################################
 
-print('The best state found is: ', best_state)
+# Random hill Climbing
+fig = plt.subplots(figsize = (12,8), dpi = 200)
 
-print('The fitness at the best state is: ', best_fitness)
+best_state, best_fitness, fitness_curve = random_hill_climb(problem = problem,
+                                                            max_attempts = max_attempts,
+                                                            curve = True,
+                                                            random_state = seed,
+                                                            )
+plt.plot(fitness_curve,label='RHC')
 
-# Solve using simulated annealing - attempt 2
-best_state, best_fitness = simulated_annealing(problem, schedule = schedule, max_attempts = 100, 
-                                                      max_iters = 1000, init_state = init_state,
-                                                      random_state = 1)
+# Simulated Annealing
+best_state, best_fitness, fitness_curve = simulated_annealing(problem = problem,
+                                                            max_attempts = max_attempts,
+                                                            curve = True,
+                                                            random_state = seed,
+                                                            )
+plt.plot(fitness_curve,label='SA')
 
-print(best_state)
+# Genetic Algorithm
+best_state, best_fitness, fitness_curve = genetic_alg(problem = problem,
+                                                      max_attempts = max_attempts,
+                                                      curve = True,
+                                                      random_state = seed,
+                                                      )
+plt.plot(fitness_curve,label='GA')
 
-print(best_fitness) 
+# MIMIC
+best_state, best_fitness, fitness_curve = mimic(problem = problem,
+                                                pop_size = 1000,
+                                                max_attempts = max_attempts,
+                                                curve = True,
+                                                random_state = seed,
+                                                )
+plt.plot(fitness_curve,label='MIMIC')
 
 
-
-
+# Format Chart
+plt.xlabel('Iteration')
+plt.ylabel('Fitness')
+plt.grid()
+plt.legend()
+plt.savefig('TravellingSales_OptProblem_Comparision.png')
+plt.show()
 
 
 
