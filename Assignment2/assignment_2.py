@@ -76,45 +76,54 @@ schedule = ExpDecay()
 fig = plt.subplots(figsize = (12,8), dpi = 200)
 
 # Random hill Climbing
+start = time.time()
 best_state_rhc, best_fitness_rhc, fitness_curve_rhc = random_hill_climb(problem = problem,
                                                             max_attempts = max_attempts,
                                                             curve = True,
                                                             random_state = seed,
                                                             )
-vPrint(f'RHC:\n\tBest State: {best_state_rhc}\n\tBest Fit: {best_fitness_rhc}\n')
+end = time.time()
+solvetime_rh = round(end - start,3)
+
+vPrint(f'RHC:\n\tBest State: {best_state_rhc}\n\tBest Fit: {best_fitness_rhc}\n\tSolve Time: {solvetime_rh}')
 plt.plot(fitness_curve_rhc,'b-',label='RHC')
 
 # Simulated Annealing
+start = time.time()
 best_state_sa, best_fitness_sa, fitness_curve_sa = simulated_annealing(problem = problem,
                                                             max_attempts = max_attempts,
                                                             curve = True,
                                                             random_state = seed,
                                                             )
-
-vPrint(f'SA:\n\tBest State: {best_state_sa}\n\tBest Fit: {best_fitness_sa}\n')
+end = time.time()
+solvetime_sa = round(end - start,3)
+vPrint(f'SA:\n\tBest State: {best_state_sa}\n\tBest Fit: {best_fitness_sa}\n\tSolve Time: {solvetime_sa}')
 plt.plot(fitness_curve_sa,label='SA')
 
 # Genetic Algorithm
+start = time.time()
 best_state_ga, best_fitness_ga, fitness_curve_ga = genetic_alg(problem = problem,
                                                       max_attempts = max_attempts,
                                                       curve = True,
                                                       random_state = seed,
                                                       )
-
-vPrint(f'GA:\n\tBest State: {best_state_ga}\n\tBest Fit: {best_fitness_ga}\n')
+end = time.time()
+solvetime_ga = round(end - start,3)
+vPrint(f'GA:\n\tBest State: {best_state_ga}\n\tBest Fit: {best_fitness_ga}\n\tSolve Time: {solvetime_ga}')
 plt.plot(fitness_curve_ga,label='GA')
 
 # MIMIC
+start = time.time()
 best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
                                                 pop_size = 10000,
                                                 max_attempts = max_attempts,
                                                 curve = True,
                                                 random_state = seed,
                                                 )
-
-vPrint(f'MIMIC:\n\tBest State: {best_state_m}\n\tBest Fit: {best_fitness_m}\n')
-plt.plot(fitness_curve,label='MIMIC')
-
+end = time.time()
+solvetime_m = round(end - start,3)
+vPrint(f'MIMIC:\n\tBest State: {best_state_m}\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
+plt.plot(fitness_curve_m,label='MIMIC')
 
 # Format Chart
 plt.xlabel('Iteration')
