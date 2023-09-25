@@ -46,6 +46,8 @@ def vPrint(text: str = '', verbose: bool = verbose):
 # Travelling Sales Optimization Problem
 ###############################################################################
 max_attempts = 1000
+# MIMIC pop_size
+pop_size = 10000
 n = 15 # Number of cities
 probConnect = 0.5
 useDistances = True
@@ -115,7 +117,7 @@ plt.plot(fitness_curve_ga,label='GA')
 # MIMIC
 start = time.time()
 best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
-                                                pop_size = 10000,
+                                                pop_size = pop_size,
                                                 max_attempts = max_attempts,
                                                 curve = True,
                                                 random_state = seed,
