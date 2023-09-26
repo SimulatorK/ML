@@ -557,14 +557,14 @@ def mimic(problem, pop_size=200, keep_pct=0.2, max_attempts=10,
         # Generate new sample
         new_sample = problem.sample_pop(pop_size)
         problem.set_population(new_sample)
-
         next_state = problem.best_child()
 
         next_fitness = problem.eval_fitness(next_state)
 
         # If best child is an improvement,
         # move to that state and reset attempts counter
-        if next_fitness > problem.get_fitness():
+        p_fitness = problem.get_fitness()
+        if next_fitness > p_fitness:
             problem.set_state(next_state)
             attempts = 0
 
@@ -572,8 +572,9 @@ def mimic(problem, pop_size=200, keep_pct=0.2, max_attempts=10,
             attempts += 1
 
         if curve:
-            fitness_curve.append(problem.get_fitness())
-
+            
+            fitness_curve.append(p_fitness)
+        
     best_fitness = problem.get_maximize()*problem.get_fitness()
     best_state = problem.get_state().astype(int)
 

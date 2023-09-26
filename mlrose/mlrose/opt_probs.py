@@ -644,6 +644,19 @@ class DiscreteOpt(OptProb):
 
         return new_sample
 
+class KnapsackOpt(DiscreteOpt):
+    
+    def random(self):
+        """Return a random state vector.
+
+        Returns
+        -------
+        state: array
+            Randomly generated state vector.
+        """
+        state = np.random.randint(0, self.max_val, self.length)
+
+        return state
 
 class ContinuousOpt(OptProb):
     """Class for defining continuous-state optimisation problems.
