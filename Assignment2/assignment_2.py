@@ -20,6 +20,8 @@ import math
 import networkx as nx 
 import time
 
+from sklearn import preprocessing
+from  sklearn import model_selection
 ## Import mlrose
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
@@ -33,6 +35,10 @@ from mlrose.decay import GeomDecay, ArithDecay, ExpDecay, CustomSchedule
 from mlrose.algorithms import (hill_climb, random_hill_climb, simulated_annealing,
                          genetic_alg, mimic)
 from mlrose.neural import NeuralNetwork, LinearRegression, LogisticRegression
+
+os.chdir('../mlrose-hiive')
+# Import mlrose-hiive modules
+
 os.chdir('../Assignment2')
 
 ### Import exponential algorithm for TSP problem
@@ -42,12 +48,22 @@ import held_karp as hk
 ###############################################################################
 seed = 903860493
 verbose = True
-max_iters = 3000
+max_iters = 2000
 max_attempts = 20
 # MIMIC pop_size
 pop_size = 500
 restarts = 0
-mutation_prob = 0.4
+mutation_prob = 0.01
+
+## GridSearch Params for each algorithm
+param_grid_rhc = {
+    'restarts':0,
+    'max_iters':max_iters,
+                  }
+param_grid_sa = {
+    'shedule':[GeomDecay(),ArithDecay(),ExpDecay(),],
+    
+    }
 
 def vPrint(text: str = '', verbose: bool = verbose):
     if verbose:
@@ -77,7 +93,7 @@ def runProblem(problem,title: str, **kwargs):
                                                                             )
     end = time.time()
     solvetime_rh = round(end - start,3)
-    vPrint(f'RHC:\n\tBest State: {best_state_rhc}\n\tBest Fit: {best_fitness_rhc}\n\tSolve Time: {solvetime_rh}')
+    vPrint(f'RHC:\n\tBest Fit: {best_fitness_rhc}\n\tSolve Time: {solvetime_rh}')
     plt.plot(fitness_curve_rhc,'b-',label='RHC')
     # Simulated Annealing
     start = time.time()
@@ -90,7 +106,7 @@ def runProblem(problem,title: str, **kwargs):
                                                                 )
     end = time.time()
     solvetime_sa = round(end - start,3)
-    vPrint(f'SA:\n\tBest State: {best_state_sa}\n\tBest Fit: {best_fitness_sa}\n\tSolve Time: {solvetime_sa}')
+    vPrint(f'SA:\n\tBest Fit: {best_fitness_sa}\n\tSolve Time: {solvetime_sa}')
     plt.plot(fitness_curve_sa,'r-',label='SA')
     
     # Genetic Algorithm
@@ -98,14 +114,14 @@ def runProblem(problem,title: str, **kwargs):
     best_state_ga, best_fitness_ga, fitness_curve_ga = genetic_alg(problem = problem,
                                                                    pop_size = pop_size,
                                                           max_iters = max_iters,
-                                                          max_attempts = max_attempts,
+                                                          max_attempts = int(max_iters/2), # GA seems limited by attempts not iters
                                                           mutation_prob = mutation_prob,
                                                           curve = True,
                                                           random_state = seed,
                                                           )
     end = time.time()
     solvetime_ga = round(end - start,3)
-    vPrint(f'GA:\n\tBest State: {best_state_ga}\n\tBest Fit: {best_fitness_ga}\n\tSolve Time: {solvetime_ga}')
+    vPrint(f'GA:\n\tBest Fit: {best_fitness_ga}\n\tSolve Time: {solvetime_ga}')
     plt.plot(fitness_curve_ga,'g-',label='GA')
     
     # MIMIC
@@ -121,7 +137,7 @@ def runProblem(problem,title: str, **kwargs):
                                                         )
         end = time.time()
         solvetime_m = round(end - start,3)
-        vPrint(f'MIMIC:\n\tBest State: {best_state_m}\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
+        vPrint(f'MIMIC:\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
         plt.plot(fitness_curve_m,'k-',label='MIMIC')
     except:
         vPrint('Fast MIMIC failed, trying slow...')
@@ -136,7 +152,7 @@ def runProblem(problem,title: str, **kwargs):
                                                         )
         end = time.time()
         solvetime_m = round(end - start,3)
-        vPrint(f'MIMIC:\n\tBest State: {best_state_m}\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
+        vPrint(f'MIMIC:\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
         plt.plot(fitness_curve_m,'k-',label='MIMIC')
         
     # Format Chart
@@ -156,6 +172,7 @@ def runProblem(problem,title: str, **kwargs):
     plt.bar('GA',solvetime_ga)
     plt.bar('MIMIC',solvetime_m)
     plt.ylabel('Solution Time (sec)')
+    plt.title(title)
     plt.grid()
     plt.tight_layout()
     plt.savefig(f'Images/{title}_SolveTime.png')
@@ -169,90 +186,93 @@ print('######################################################################')
 print('Travelling Salesman Problem')
 print('######################################################################')
 
-n = 50 # Number of cities
-probConnect = 0.5
-useDistances = True
-
-# Create a connected graph to represent cities and routes
-
-g = nx.erdos_renyi_graph(n, probConnect, seed=seed, directed=False)
-while not nx.is_connected(g):
-    n += 1
-    vPrint('Graph not connected, increasing n...')
-    g = nx.erdos_renyi_graph(n, 0.5, seed=seed, directed=False)
-vPrint(f'N set to {n}')
-
-# Add weights
-for (u, v) in g.edges():
-    g.edges[u,v]['weight'] = np.ceil(random.random()*10)
+n_cities = [10,20,50,100]
+for n in n_cities:
+        
+    probConnect = 0.5
+    useDistances = True
     
-distances = [(u,v,w['weight']) for (u,v,w) in g.edges(data=True)]
-
-
-## Create distance matrix
-# =============================================================================
-# dist_matrix = np.ones((n,n))
-# for i in range(n):
-#     for ii in range(n):
-#         edge = (i,ii)
-#         if edge in distances:
-#             dist_matrix[i][ii] = -1
-#         else:
-#             dist_matrix[i][ii] = 1
-# 
-# # Compute held_karp
-# brute_force = hk.held_karp(dist_matrix)
-# brute_path = []
-# for n, target in enumerate(brute_force[1]):
-#     source = brute_force[1][n-1]
-#     if source not in brute_path:
-#         brute_path.append(source)
-#         
-#     shortest_p = nx.shortest_path(g,source,target)
-#     for n_ in shortest_p:
-#         if n_ != source and n_ != target:
-#             brute_path.append(n)
-#             
-# print(f'Brute force path: {brute_path}')
-# =============================================================================
-
-# Draw the city graph
-# =============================================================================
-# labels = {list(g.nodes)[i]: f'{i}' for i in range(n)}
-# =============================================================================
-fig = plt.subplots(figsize = (12,8), dpi = 200)
-pos=nx.spring_layout(g)
-nx.draw(g, with_labels=True)
-labels = nx.get_edge_attributes(g,'weight')
-# =============================================================================
-# nx.draw_networkx_edge_labels(g,pos,edge_labels=labels)
-# =============================================================================
-plt.title(f'{n} City Connected Graph')
-plt.savefig('Images/TravellingSales_CityGraph.png')
-plt.show()
-
-# Get pos from spring layout
-coords = [(c[0],c[1]) for c in pos.values()]
-
-fitness = TravellingSales(coords = coords, )#distances = distances)
-
-problem = TSPOpt(length = n, fitness_fn = fitness)
-
-# Define decay schedule
-schedule = ExpDecay()
-
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters,
-        'max_attempts':max_attempts,
-        'pop_size':pop_size,
-        'mutation_prob':mutation_prob,
-          }
-
-runProblem(problem=problem,title='TravellingSales',**kwargs)
+    # Create a connected graph to represent cities and routes
+    
+    g = nx.erdos_renyi_graph(n, probConnect, seed=seed, directed=False)
+    while not nx.is_connected(g):
+        n += 1
+        vPrint('Graph not connected, increasing n...')
+        g = nx.erdos_renyi_graph(n, 0.5, seed=seed, directed=False)
+    vPrint(f'N set to {n}')
+    
+    # Add weights
+    for (u, v) in g.edges():
+        g.edges[u,v]['weight'] = np.ceil(random.random()*10)
+        
+    distances = [(u,v,w['weight']) for (u,v,w) in g.edges(data=True)]
+    
+    
+    ## Create distance matrix
+    # =============================================================================
+    # dist_matrix = np.ones((n,n))
+    # for i in range(n):
+    #     for ii in range(n):
+    #         edge = (i,ii)
+    #         if edge in distances:
+    #             dist_matrix[i][ii] = -1
+    #         else:
+    #             dist_matrix[i][ii] = 1
+    # 
+    # # Compute held_karp
+    # brute_force = hk.held_karp(dist_matrix)
+    # brute_path = []
+    # for n, target in enumerate(brute_force[1]):
+    #     source = brute_force[1][n-1]
+    #     if source not in brute_path:
+    #         brute_path.append(source)
+    #         
+    #     shortest_p = nx.shortest_path(g,source,target)
+    #     for n_ in shortest_p:
+    #         if n_ != source and n_ != target:
+    #             brute_path.append(n)
+    #             
+    # print(f'Brute force path: {brute_path}')
+    # =============================================================================
+    
+    # Draw the city graph
+    # =============================================================================
+    # labels = {list(g.nodes)[i]: f'{i}' for i in range(n)}
+    # =============================================================================
+    fig = plt.subplots(figsize = (12,8), dpi = 200)
+    pos=nx.spring_layout(g)
+    nx.draw(g, with_labels=True)
+    labels = nx.get_edge_attributes(g,'weight')
+    # =============================================================================
+    # nx.draw_networkx_edge_labels(g,pos,edge_labels=labels)
+    # =============================================================================
+    plt.title(f'{n} City Connected Graph')
+    plt.savefig('Images/TravellingSales_CityGraph.png')
+    plt.show()
+    
+    # Get pos from spring layout
+    coords = [(c[0],c[1]) for c in pos.values()]
+    
+    fitness = TravellingSales(coords = coords, )#distances = distances)
+    
+    problem = TSPOpt(length = n, fitness_fn = fitness)
+    
+    # Define decay schedule
+    schedule = ExpDecay()
+    
+    ##################################
+    # Solve using each algorithm
+    ##################################
+    kwargs = {
+            'restarts':restarts,
+            'max_iters':max_iters,
+            'max_attempts':max_attempts,
+            'pop_size':pop_size,
+            'mutation_prob':mutation_prob,
+              }
+    
+    title = f'TravellingSales_{n}'
+    runProblem(problem=problem,title=title,**kwargs)
 
 ###############################################################################
 # One Peak Problem
@@ -261,23 +281,25 @@ print('######################################################################')
 print('One Peak Problem')
 print('######################################################################')
 
-bits = 1000
-fitness = OneMax() 
-problem = DiscreteOpt(length = bits, fitness_fn = fitness,
-                        maximize = True, max_val = 2)
-
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters,
-        'max_attempts':max_attempts,
-        'pop_size':pop_size,
-        'mutation_prob':mutation_prob,
-          }
-
-runProblem(problem=problem,title='OnePeak',**kwargs)
+bit_sizes = [10,100,1000,5000]
+for bits in bit_sizes:
+    bits = 1000
+    fitness = OneMax() 
+    problem = DiscreteOpt(length = bits, fitness_fn = fitness,
+                            maximize = True, max_val = 2)
+    
+    ##################################
+    # Solve using each algorithm
+    ##################################
+    kwargs = {
+            'restarts':restarts,
+            'max_iters':max_iters,
+            'max_attempts':max_attempts,
+            'pop_size':pop_size,
+            'mutation_prob':mutation_prob,
+              }
+    title = f'OnePeak_{bits}bits'    
+    runProblem(problem=problem,title='OnePeak',**kwargs)
 
 ###############################################################################
 # Random Bit Match Problem
@@ -356,7 +378,7 @@ runProblem(problem=problem,title='FourPeaks',**kwargs)
 print('######################################################################')
 print('Knapsack Problem')
 print('######################################################################')
-n_items = 20
+n_items = 50
 weights = [0] # First item has zero weight and zero value
 values = [0]
 weights.extend([random.randint(1,n_items) for _ in range(n_items - 1)])

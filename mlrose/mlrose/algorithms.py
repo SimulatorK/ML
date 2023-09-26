@@ -445,7 +445,7 @@ def genetic_alg(problem, pop_size=200, mutation_prob=0.1, max_attempts=10,
 
         if curve:
             fitness_curve.append(problem.get_fitness())
-
+    print(f'Iters: {iters}, Attempts: {attempts}')
     best_fitness = problem.get_maximize()*problem.get_fitness()
     best_state = problem.get_state()
 
