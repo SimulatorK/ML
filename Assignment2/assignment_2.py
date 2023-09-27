@@ -299,7 +299,7 @@ for bits in bit_sizes:
             'mutation_prob':mutation_prob,
               }
     title = f'OnePeak_{bits}bits'    
-    runProblem(problem=problem,title='OnePeak',**kwargs)
+    runProblem(problem=problem,title=title,**kwargs)
 
 ###############################################################################
 # Random Bit Match Problem
