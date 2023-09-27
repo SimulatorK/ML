@@ -27,18 +27,47 @@ if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
 
 os.chdir('../mlrose')
-from mlrose.fitness import (OneMax, FlipFlop, FourPeaks, SixPeaks, ContinuousPeaks,
-                      Knapsack, TravellingSales, Queens, MaxKColor, 
-                      CustomFitness)
-from mlrose.opt_probs import DiscreteOpt, ContinuousOpt, TSPOpt
-from mlrose.decay import GeomDecay, ArithDecay, ExpDecay, CustomSchedule
-from mlrose.algorithms import (hill_climb, random_hill_climb, simulated_annealing,
-                         genetic_alg, mimic)
-from mlrose.neural import NeuralNetwork, LinearRegression, LogisticRegression
-
+# =============================================================================
+# from mlrose.fitness import (OneMax, FlipFlop, FourPeaks, SixPeaks, ContinuousPeaks,
+#                       Knapsack, TravellingSales, Queens, MaxKColor, 
+#                       CustomFitness)
+# from mlrose.opt_probs import DiscreteOpt, ContinuousOpt, TSPOpt
+# from mlrose.decay import GeomDecay, ArithDecay, ExpDecay, CustomSchedule
+# from mlrose.algorithms import (hill_climb, random_hill_climb, simulated_annealing,
+#                          genetic_alg, mimic)
+# from mlrose.neural import NeuralNetwork, LinearRegression, LogisticRegression
+# 
+# =============================================================================
 os.chdir('../mlrose-hiive')
 # Import mlrose-hiive modules
+from mlrose_hiive.algorithms.ga import (genetic_alg)
+from mlrose_hiive.algorithms.sa import (simulated_annealing)
+from mlrose_hiive.algorithms.hc import (hill_climb)
+from mlrose_hiive.algorithms.rhc import (random_hill_climb)
+from mlrose_hiive.algorithms.gd import (gradient_descent)
+from mlrose_hiive.algorithms.mimic import (mimic)
+from mlrose_hiive.algorithms.decay import GeomDecay, ArithDecay, ExpDecay, CustomSchedule
+from mlrose_hiive.algorithms.crossovers import OnePointCrossOver, UniformCrossOver, TSPCrossOver
+from mlrose_hiive.algorithms.mutators import ChangeOneMutator, DiscreteMutator, SwapMutator, ShiftOneMutator
+from mlrose_hiive.fitness import (OneMax, FlipFlop, FourPeaks, SixPeaks, ContinuousPeaks,
+                      Knapsack, TravellingSales, Queens, MaxKColor,
+                      CustomFitness)
+from mlrose_hiive.neural import NeuralNetwork, LinearRegression, LogisticRegression, _nn_core, NNClassifier
+from mlrose_hiive.neural.activation import (identity, relu,leaky_relu, sigmoid, softmax, tanh)
+from mlrose_hiive.neural.fitness import NetworkWeights
+from mlrose_hiive.neural.utils.weights import (flatten_weights, unflatten_weights)
 
+from mlrose_hiive.gridsearch import GridSearchMixin
+
+from mlrose_hiive.opt_probs import DiscreteOpt, ContinuousOpt, KnapsackOpt, TSPOpt, QueensOpt, FlipFlopOpt, MaxKColorOpt
+
+from mlrose_hiive.runners import GARunner, MIMICRunner, RHCRunner, SARunner, NNGSRunner, SKMLPRunner
+from mlrose_hiive.runners import (build_data_filename)
+from mlrose_hiive.generators import (MaxKColorGenerator, QueensGenerator, FlipFlopGenerator, TSPGenerator, KnapsackGenerator,
+                         ContinuousPeaksGenerator)
+
+from mlrose_hiive.samples import SyntheticData
+from mlrose_hiive.samples import (plot_synthetic_dataset)
 os.chdir('../Assignment2')
 
 ### Import exponential algorithm for TSP problem
@@ -60,10 +89,6 @@ param_grid_rhc = {
     'restarts':0,
     'max_iters':max_iters,
                   }
-param_grid_sa = {
-    'shedule':[GeomDecay(),ArithDecay(),ExpDecay(),],
-    
-    }
 
 def vPrint(text: str = '', verbose: bool = verbose):
     if verbose:
@@ -125,36 +150,19 @@ def runProblem(problem,title: str, **kwargs):
     plt.plot(fitness_curve_ga,'g-',label='GA')
     
     # MIMIC
-    try:
-        start = time.time()
-        best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
-                                                        pop_size = pop_size,
-                                                        max_iters = max_iters,
-                                                        max_attempts = max_attempts,
-                                                        curve = True,
-                                                        random_state = seed,
-                                                        fast_mimic=True
-                                                        )
-        end = time.time()
-        solvetime_m = round(end - start,3)
-        vPrint(f'MIMIC:\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
-        plt.plot(fitness_curve_m,'k-',label='MIMIC')
-    except:
-        vPrint('Fast MIMIC failed, trying slow...')
-        start = time.time()
-        best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
-                                                        pop_size = pop_size,
-                                                        max_iters = max_iters,
-                                                        max_attempts = max_attempts,
-                                                        curve = True,
-                                                        random_state = seed,
-                                                        fast_mimic=False
-                                                        )
-        end = time.time()
-        solvetime_m = round(end - start,3)
-        vPrint(f'MIMIC:\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
-        plt.plot(fitness_curve_m,'k-',label='MIMIC')
-        
+    start = time.time()
+    best_state_m, best_fitness_m, fitness_curve_m = mimic(problem = problem,
+                                                    pop_size = pop_size,
+                                                    max_iters = max_iters,
+                                                    max_attempts = max_attempts,
+                                                    curve = True,
+                                                    random_state = seed,
+                                                    )
+    end = time.time()
+    solvetime_m = round(end - start,3)
+    vPrint(f'MIMIC:\n\tBest Fit: {best_fitness_m}\n\tSolve Time: {solvetime_m}')
+    plt.plot(fitness_curve_m,'k-',label='MIMIC')
+    
     # Format Chart
     plt.xlabel('Iteration')
     plt.ylabel('Fitness')
