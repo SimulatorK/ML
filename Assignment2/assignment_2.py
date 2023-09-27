@@ -190,7 +190,7 @@ print('######################################################################')
 print('Travelling Salesman Problem')
 print('######################################################################')
 
-n_cities = [10,20,50,100]
+n_cities = [100,]
 for n in n_cities:
         
     probConnect = 0.5
@@ -277,34 +277,36 @@ for n in n_cities:
     
     title = f'TravellingSales_{n}'
     runProblem(problem=problem,title=title,**kwargs)
-
-###############################################################################
-# One Peak Problem
-###############################################################################
-print('######################################################################')
-print('One Peak Problem')
-print('######################################################################')
-
-bit_sizes = [10,100,1000,5000]
-for bits in bit_sizes:
-    bits = 1000
-    fitness = OneMax() 
-    problem = DiscreteOpt(length = bits, fitness_fn = fitness,
-                            maximize = True, max_val = 2)
-    
-    ##################################
-    # Solve using each algorithm
-    ##################################
-    kwargs = {
-            'restarts':restarts,
-            'max_iters':max_iters,
-            'max_attempts':max_attempts,
-            'pop_size':pop_size,
-            'mutation_prob':mutation_prob,
-              }
-    title = f'OnePeak_{bits}bits'    
-    runProblem(problem=problem,title=title,**kwargs)
-
+# =============================================================================
+# 
+# ###############################################################################
+# # One Peak Problem
+# ###############################################################################
+# print('######################################################################')
+# print('One Peak Problem')
+# print('######################################################################')
+# 
+# bit_sizes = [10,100,1000,5000]
+# for bits in bit_sizes:
+#     bits = 1000
+#     fitness = OneMax() 
+#     problem = DiscreteOpt(length = bits, fitness_fn = fitness,
+#                             maximize = True, max_val = 2)
+#     
+#     ##################################
+#     # Solve using each algorithm
+#     ##################################
+#     kwargs = {
+#             'restarts':restarts,
+#             'max_iters':max_iters,
+#             'max_attempts':max_attempts,
+#             'pop_size':pop_size,
+#             'mutation_prob':mutation_prob,
+#               }
+#     title = f'OnePeak_{bits}bits'    
+#     runProblem(problem=problem,title=title,**kwargs)
+# 
+# =============================================================================
 ###############################################################################
 # Random Bit Match Problem
 ###############################################################################
@@ -375,70 +377,72 @@ kwargs = {
           }
 
 runProblem(problem=problem,title='FourPeaks',**kwargs)
-
-###############################################################################
-# Knapsack Problem
-###############################################################################
-print('######################################################################')
-print('Knapsack Problem')
-print('######################################################################')
-n_items = 50
-weights = [0] # First item has zero weight and zero value
-values = [0]
-weights.extend([random.randint(1,n_items) for _ in range(n_items - 1)])
-values.extend([random.randint(0,n_items) for _ in range(n_items - 1)])
-max_weight_pct = 1
-weights = np.array(weights)
-values = np.array(values)
-
-# Custom Knapsack Fitness Function
-def custom_knapsack(state, weights, values, max_weight_pct):
-    """
-        State is the items to use in the knapsack.
-        Weights is the corresponding weight and values is the corresponding value
-        
-        Use with DiscreteOpt, number of states should match length and be integers
-    """
-    _w = np.ceil(max_weight_pct * np.sum(np.array(weights)))
-    #vPrint(f'Max weight: {_w}')
-    tot_weight = 0
-    tot_value = 0
-    for s in state:
-        s = int(s)
-        tot_weight += weights[s]
-        tot_value += values[s]
-    #vPrint(f'Total weight: {tot_weight}')
-    if tot_weight <= _w:
-        return tot_value
-    else:
-        return 0
-
-kwargs = {'weights':weights,
-          'values':values,
-          'max_weight_pct':max_weight_pct,
-          }
-
-fitness = CustomFitness(fitness_fn = custom_knapsack, problem_type='discrete', **kwargs)
-    
 # =============================================================================
-# fitness = Knapsack(weights = weights, values = values, max_weight_pct = max_weight_pct)
+# 
+# ###############################################################################
+# # Knapsack Problem
+# ###############################################################################
+# print('######################################################################')
+# print('Knapsack Problem')
+# print('######################################################################')
+# n_items = 50
+# weights = [0] # First item has zero weight and zero value
+# values = [0]
+# weights.extend([random.randint(1,n_items) for _ in range(n_items - 1)])
+# values.extend([random.randint(0,n_items) for _ in range(n_items - 1)])
+# max_weight_pct = 1
+# weights = np.array(weights)
+# values = np.array(values)
+# 
+# # Custom Knapsack Fitness Function
+# def custom_knapsack(state, weights, values, max_weight_pct):
+#     """
+#         State is the items to use in the knapsack.
+#         Weights is the corresponding weight and values is the corresponding value
+#         
+#         Use with DiscreteOpt, number of states should match length and be integers
+#     """
+#     _w = np.ceil(max_weight_pct * np.sum(np.array(weights)))
+#     #vPrint(f'Max weight: {_w}')
+#     tot_weight = 0
+#     tot_value = 0
+#     for s in state:
+#         s = int(s)
+#         tot_weight += weights[s]
+#         tot_value += values[s]
+#     #vPrint(f'Total weight: {tot_weight}')
+#     if tot_weight <= _w:
+#         return tot_value
+#     else:
+#         return 0
+# 
+# kwargs = {'weights':weights,
+#           'values':values,
+#           'max_weight_pct':max_weight_pct,
+#           }
+# 
+# fitness = CustomFitness(fitness_fn = custom_knapsack, problem_type='discrete', **kwargs)
+#     
+# # =============================================================================
+# # fitness = Knapsack(weights = weights, values = values, max_weight_pct = max_weight_pct)
+# # =============================================================================
+# 
+# problem = DiscreteOpt(length = n_items, fitness_fn = fitness, maximize=True, max_val=n_items)
+# 
+# ##################################
+# # Solve using each algorithm
+# ##################################
+# kwargs = {
+#         'restarts':restarts,
+#         'max_iters':max_iters,
+#         'max_attempts':max_attempts,
+#         'pop_size':pop_size,
+#         'mutation_prob':mutation_prob,
+#           }
+# 
+# runProblem(problem=problem,title='Knapsack',**kwargs)
+# 
 # =============================================================================
-
-problem = DiscreteOpt(length = n_items, fitness_fn = fitness, maximize=True, max_val=n_items)
-
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters,
-        'max_attempts':max_attempts,
-        'pop_size':pop_size,
-        'mutation_prob':mutation_prob,
-          }
-
-runProblem(problem=problem,title='Knapsack',**kwargs)
-
 
 ###############################################################################
 ###############################################################################
@@ -480,9 +484,9 @@ Xtest = scaler.transform(Xtest)
 # Neural Network Model - run each optimization algorithm
 ############################
 
-algos = ['random_hill_climb', 'simulated_annealing', 'genetic_alg','gradient_descent']
+algos = ['random_hill_climb', 'simulated_annealing','genetic_alg',]
 actives = ['identity', 'relu', 'sigmoid','tanh']
-max_iters = 1000
+max_iters = 100
 early_stopping = True
 mutation_probs = np.linspace(0.001,0.1,10)
 h_nodes = [[int(x)] for x in np.linspace(5, 25,5)]
@@ -496,8 +500,9 @@ best_f1 = 0
 for algo in algos:
 
     model = NeuralNetwork(algorithm = algo,
-                          hidden_nodes = [10],
                           activation = 'relu',
+                          hidden_nodes = [Xdata.shape[1]],
+                          mutation_prob = 0.01,
                           max_iters = max_iters,
                           curve = True, 
                           random_state = seed)
@@ -514,25 +519,31 @@ for algo in algos:
     
     f1 = f1_score(Ytest,y_pred)
 
+    if f1 > best_f1:
+        best_f1 = f1
+        best_model = model
+
     vPrint(f'Algorithm: {algo}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
     
     ## Add data to plot
-    ax.plot(model.fitness_curve,label=f'{algo}')
+    ax.plot(model.fitness_curve[:,0],label=f'{algo}')
 
 plt.grid()
 plt.legend()
 plt.xlabel('Iteration')
 plt.ylabel('Fitness')
 plt.tight_layout()
+plt.savefig('Images/NN_optimization.png')
 plt.show()
 
 
 
 ### Optimal Algorithm Search
+best_model_alg = best_model.algorithm
 
 param_grid_nn = {
     'activation':actives,
-    'algorithm':['genetic_alg',],
+    'algorithm':[best_model_alg,],
     'mutation_prob':mutation_probs,
     'hidden_nodes':h_nodes,
     }
