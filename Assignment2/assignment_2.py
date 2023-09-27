@@ -84,11 +84,7 @@ pop_size = 500
 restarts = 0
 mutation_prob = 0.01
 
-## GridSearch Params for each algorithm
-param_grid_rhc = {
-    'restarts':0,
-    'max_iters':max_iters,
-                  }
+n_jobs = 20
 
 def vPrint(text: str = '', verbose: bool = verbose):
     if verbose:
@@ -451,28 +447,124 @@ runProblem(problem=problem,title='Knapsack',**kwargs)
 ###############################################################################
 
 
+## Select Data Sets
+mushroomClassificationFile = r"data/secondary+mushroom+dataset/MushroomDataset/secondary_data.csv"
+ds = pd.read_csv(mushroomClassificationFile)
+
+#Train Test Split for all experiments 
+test_size = 0.2
+
+# Split data
+
+## Get X, Y data for test and train
+Xdata = ds.iloc[:,1:-1]
+Ydata = ds.iloc[:,-1]
+
+## PRE-PROCESS ALL DATA
+for col in range(Xdata.shape[1]):
+    le = preprocessing.LabelEncoder()
+    Xdata.iloc[:,col] = le.fit_transform(Xdata.iloc[:,col])
+    Ydata = le.fit_transform(Ydata)
+    
+Xtrain, Xtest, Ytrain, Ytest = model_selection.train_test_split(Xdata,
+                                                   Ydata,
+                                                   test_size=test_size,
+                                                   random_state=seed)
+
+scaler = preprocessing.MinMaxScaler()
+
+Xtrain = scaler.fit_transform(Xtrain)
+Xtest = scaler.transform(Xtest)
+
+############################
+# Neural Network Model - run each optimization algorithm
+############################
+
+algos = ['random_hill_climb', 'simulated_annealing', 'genetic_alg','gradient_descent']
+actives = ['identity', 'relu', 'sigmoid','tanh']
+max_iters = 1000
+early_stopping = True
+mutation_probs = np.linspace(0.001,0.1,10)
+h_nodes = [[int(x)] for x in np.linspace(5, 25,5)]
+pop_sizes = list(map(int,np.linspace(50,500,5)))
+
+fig, ax = plt.subplots(figsize = (12,10),dpi = 200)
+i = 0
+ii = 0
+best_model = None
+best_f1 = 0
+for algo in algos:
+
+    model = NeuralNetwork(algorithm = algo,
+                          hidden_nodes = [10],
+                          activation = 'relu',
+                          max_iters = max_iters,
+                          curve = True, 
+                          random_state = seed)
+    
+    start = time.time()
+    model.fit(Xtrain,Ytrain)
+    end = time.time()
+    
+    fit_time = end - start
+    
+    score = model.score(Xtest,Ytest)
+    
+    y_pred = model.predict(Xtest)
+    
+    f1 = f1_score(Ytest,y_pred)
+
+    vPrint(f'Algorithm: {algo}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+    
+    ## Add data to plot
+    ax.plot(model.fitness_curve,label=f'{algo}')
+
+plt.grid()
+plt.legend()
+plt.xlabel('Iteration')
+plt.ylabel('Fitness')
+plt.tight_layout()
+plt.show()
 
 
 
+### Optimal Algorithm Search
 
+param_grid_nn = {
+    'activation':actives,
+    'algorithm':['genetic_alg',],
+    'mutation_prob':mutation_probs,
+    'hidden_nodes':h_nodes,
+    }
 
+model = NeuralNetwork(curve = True,
+                          random_state = seed)
 
+for act in actives:
+    for algo in algos:
+        if algo == 'genetic_alg':
+            for mutation_prob in mutation_probs:
+                for hn in h_nodes:
+                    for pop_size in pop_sizes:         
+                        model = NeuralNetwork(algorithm = algo,
+                                              activation = act,
+                                              hidden_nodes = hn,
+                                              mutation_prob = mutation_prob,
+                                              pop_size = pop_size,
+                                              max_iters = max_iters,
+                                              curve = True, 
+                                              random_state = seed)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        else:
+            for hn in h_nodes:
+                            
+                model = NeuralNetwork(algorithm = algo,
+                                      activation = act,
+                                      hidden_nodes = hn,
+                                      mutation_prob = mutation_prob,
+                                      max_iters = max_iters,
+                                      curve = True, 
+                                      random_state = seed)
 
 
 
