@@ -461,7 +461,7 @@ test_size = 0.2
 # Split data
 
 ## Get X, Y data for test and train
-Xdata = ds.iloc[:,1:-1]
+Xdata = ds.iloc[:,:-1]
 Ydata = ds.iloc[:,-1]
 
 ## PRE-PROCESS ALL DATA
@@ -484,50 +484,106 @@ Xtest = scaler.transform(Xtest)
 # Neural Network Model - run each optimization algorithm
 ############################
 
-algos = ['random_hill_climb', 'simulated_annealing','genetic_alg',]
+algos = ['random_hill_climb', 'simulated_annealing','genetic_alg','gradient_descent']
 actives = ['identity', 'relu', 'sigmoid','tanh']
-max_iters = 100
-early_stopping = True
 mutation_probs = np.linspace(0.001,0.1,10)
 h_nodes = [[int(x)] for x in np.linspace(5, 25,5)]
 pop_sizes = list(map(int,np.linspace(50,500,5)))
+learning_rate = 0.05
+## Run model for each algorithm
+#RHC
+algo_rhc = algos[0]
+max_iters = 1000
+model_rhc = NeuralNetwork(algorithm = algo_rhc,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed)
+start = time.time()
+model_rhc.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_rhc.score(Xtest,Ytest)
+y_pred = model_rhc.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_rhc}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
 
-fig, ax = plt.subplots(figsize = (12,10),dpi = 200)
-i = 0
-ii = 0
-best_model = None
-best_f1 = 0
-for algo in algos:
 
-    model = NeuralNetwork(algorithm = algo,
-                          activation = 'relu',
-                          hidden_nodes = [Xdata.shape[1]],
-                          mutation_prob = 0.01,
-                          max_iters = max_iters,
-                          curve = True, 
-                          random_state = seed)
-    
-    start = time.time()
-    model.fit(Xtrain,Ytrain)
-    end = time.time()
-    
-    fit_time = end - start
-    
-    score = model.score(Xtest,Ytest)
-    
-    y_pred = model.predict(Xtest)
-    
-    f1 = f1_score(Ytest,y_pred)
+#SA
+algo_sa = algos[1]
+max_iters = 1000
+model_sa = NeuralNetwork(algorithm = algo_sa,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed)
+start = time.time()
+model_sa.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_sa.score(Xtest,Ytest)
+y_pred = model_sa.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_sa}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
 
-    if f1 > best_f1:
-        best_f1 = f1
-        best_model = model
 
-    vPrint(f'Algorithm: {algo}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-    
-    ## Add data to plot
-    ax.plot(model.fitness_curve[:,0],label=f'{algo}')
+#GA
+algo_ga = algos[2]
+max_iters = 1000
+model_ga = NeuralNetwork(algorithm = algo_ga,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed)
+start = time.time()
+model_ga.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_ga.score(Xtest,Ytest)
+y_pred = model_ga.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_ga}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
 
+#GD
+algo_gd = algos[3]
+max_iters = 1000
+model_gd = NeuralNetwork(algorithm = algo_gd,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed)
+start = time.time()
+model_gd.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_gd.score(Xtest,Ytest)
+y_pred = model_gd.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_gd}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+
+
+## Initialize plot
+fig, ax = plt.subplots(figsize = (12,10),dpi = 200)## Add data to plot
+ax.plot(model_rhc.fitness_curve[:,0],label=f'{algo_rhc}')
+## Add data to plot
+ax.plot(model_sa.fitness_curve[:,0],label=f'{algo_sa}')
+## Add data to plot
+ax.plot(model_ga.fitness_curve[:,0],label=f'{algo_ga}')
+## Add data to plot
+ax.plot(model_gd.fitness_curve,label=f'{algo_gd}')
+###### FINISH PLOT
 plt.grid()
 plt.legend()
 plt.xlabel('Iteration')
@@ -535,48 +591,6 @@ plt.ylabel('Fitness')
 plt.tight_layout()
 plt.savefig('Images/NN_optimization.png')
 plt.show()
-
-
-
-### Optimal Algorithm Search
-best_model_alg = best_model.algorithm
-
-param_grid_nn = {
-    'activation':actives,
-    'algorithm':[best_model_alg,],
-    'mutation_prob':mutation_probs,
-    'hidden_nodes':h_nodes,
-    }
-
-model = NeuralNetwork(curve = True,
-                          random_state = seed)
-
-for act in actives:
-    for algo in algos:
-        if algo == 'genetic_alg':
-            for mutation_prob in mutation_probs:
-                for hn in h_nodes:
-                    for pop_size in pop_sizes:         
-                        model = NeuralNetwork(algorithm = algo,
-                                              activation = act,
-                                              hidden_nodes = hn,
-                                              mutation_prob = mutation_prob,
-                                              pop_size = pop_size,
-                                              max_iters = max_iters,
-                                              curve = True, 
-                                              random_state = seed)
-
-        else:
-            for hn in h_nodes:
-                            
-                model = NeuralNetwork(algorithm = algo,
-                                      activation = act,
-                                      hidden_nodes = hn,
-                                      mutation_prob = mutation_prob,
-                                      max_iters = max_iters,
-                                      curve = True, 
-                                      random_state = seed)
-
 
 
 
