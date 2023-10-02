@@ -84,12 +84,13 @@ class _NNBase(BaseEstimator, ABC):
 
     @staticmethod
     def _build_problem_and_fitness_function(X, y, node_list, activation, learning_rate,
-                                            bias, clip_max, is_classifier=True):
+                                            bias, clip_max, is_classifier=True,loss=None):
         # Initialize optimization problem
         fitness = NetworkWeights(X, y, node_list,
                                  activation,
                                  bias, is_classifier,
-                                 learning_rate=learning_rate)
+                                 learning_rate=learning_rate,
+                                 loss=None)
         num_nodes = _NNBase._calculate_state_size(node_list)
         problem = ContinuousOpt(length=num_nodes,
                                 fitness_fn=fitness,

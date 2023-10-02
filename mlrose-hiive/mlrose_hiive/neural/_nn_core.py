@@ -27,7 +27,7 @@ class _NNCore(_NNBase):
     def __init__(self, hidden_nodes=None, activation='relu', algorithm='random_hill_climb', max_iters=100, bias=True,
                  is_classifier=True, learning_rate=0.1, early_stopping=False, clip_max=1e+10, restarts=0,
                  schedule=GeomDecay(), pop_size=200, mutation_prob=0.1, max_attempts=10, random_state=None,
-                 curve=False):
+                 curve=False,loss_fn=None):
 
         super().__init__()
         if hidden_nodes is None:
@@ -61,6 +61,7 @@ class _NNCore(_NNBase):
         self.output_activation = None
         self.predicted_probs = []
         self.fitness_curve = []
+        self.loss_fn = loss_fn
 
     def _validate(self):
         if (not isinstance(self.max_iters, int) and self.max_iters != np.inf
@@ -147,7 +148,8 @@ class _NNCore(_NNBase):
                                                                     self.learning_rate,
                                                                     self.bias,
                                                                     self.clip_max,
-                                                                    self.is_classifier)
+                                                                    self.is_classifier,
+                                                                    self.loss_fn)
 
         if self.algorithm == 'random_hill_climb':
             fitness_curve, fitted_weights, loss = self.__run_with_rhc(init_weights, num_nodes, problem)

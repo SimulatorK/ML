@@ -111,7 +111,8 @@ class NeuralNetwork(_NNCore, ClassifierMixin):
                  mutation_prob=0.1,
                  max_attempts=10,
                  random_state=None,
-                 curve=False):
+                 curve=False,
+                 loss_fn=None):
         super().__init__(
             hidden_nodes=hidden_nodes,
             activation=activation,
@@ -128,5 +129,6 @@ class NeuralNetwork(_NNCore, ClassifierMixin):
             mutation_prob=mutation_prob,
             max_attempts=max_attempts,
             random_state=random_state,
-            curve=curve)
+            curve=curve,
+            loss_fn=loss_fn)
 

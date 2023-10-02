@@ -40,7 +40,7 @@ class NetworkWeights:
     """
 
     def __init__(self, X, y, node_list, activation, bias=True,
-                 is_classifier=True, learning_rate=0.1):
+                 is_classifier=True, learning_rate=0.1, loss=None):
 
         # Make sure y is an array and not a list
         y = np.array(y)
@@ -90,7 +90,7 @@ class NetworkWeights:
             else:
                 self.output_activation = act.softmax
         else:
-            self.loss = skm.mean_squared_error
+            self.loss = skm.mean_squared_error if loss is None else loss
             self.output_activation = act.identity
 
         self.inputs_list = []
