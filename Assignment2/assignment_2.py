@@ -108,6 +108,7 @@ def runProblem(problem,title: str, **kwargs):
     pop_size = int(kwargs['pop_size'])
     mutation_prob = kwargs['mutation_prob']
     keep_pct = kwargs['keep_pct']
+    
     ##################################
     # Solve using each algorithm
     ##################################
@@ -345,7 +346,7 @@ print('######################################################################')
 print('Random Bit Match')
 print('######################################################################')
 
-bits = 50
+bits = 100
 n_bits = 4
 mask = np.random.randint(0,n_bits,bits)
 ## Fitness function returns successively higher values for multiple adjacent matched bits
@@ -390,54 +391,83 @@ problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize=True, max_va
 ##################################
 kwargs = {
         'restarts':restarts,
-        'max_iters':max_iters,
+        'max_iters':max_iters*10,
         'max_attempts':max_attempts,
         'pop_size':bits,
         'mutation_prob':mutation_prob,
         'keep_pct':0.1,
           }
 
-# Find optimal
-vPrint('Finding optimal mimic for RBM problem...')
-experiment_name = 'RandomBitMatch'
-iteration_list = list(map(int,np.linspace(10,1000,5)))
-population_sizes = list(map(int,np.linspace(10,500,5)))
-mmc = MIMICRunner(problem=problem,
-                  experiment_name=experiment_name,
-                  output_directory=os.getcwd(),
-                  population_sizes = population_sizes,
-                  seed=seed,
-                  iteration_list = iteration_list,
-                  max_attempts=500,
-                  keep_percent_list=[0.05,0.1,0.2, 0.5, 0.75],
-                  use_fast_mimic = True)
-run_start = time.time()
-df_run_stats, df_run_curves = mmc.run()
-run_end = time.time()
-vPrint('MIMIC runner time for RBC: {run_end - run_start}')
-
-best_mimic_run = mmc.run_stats_df.iloc[np.argmax(mmc.run_stats_df['Fitness']),:]
-best_pop_size = best_mimic_run['Population Size']
-best_iters = best_mimic_run['max_iters']
-best_state = best_mimic_run['State']
-best_keep_pct = best_mimic_run['Keep Percent']
-best_state = list(map(float,best_state.replace(']','').replace('[','').replace(' ','').split(',')))
-
-kwargs['max_iters'] = best_iters
-kwargs['keep_pct'] = best_keep_pct
-kwargs['pop_size'] = best_pop_size
+# =============================================================================
+# # Find optimal
+# vPrint('Finding optimal mimic for RBM problem...')
+# experiment_name = 'RandomBitMatch'
+# iteration_list = list(map(int,np.linspace(10,1000,5)))
+# population_sizes = list(map(int,np.linspace(10,500,5)))
+# mmc = MIMICRunner(problem=problem,
+#                   experiment_name=experiment_name,
+#                   output_directory=os.getcwd(),
+#                   population_sizes = population_sizes,
+#                   seed=seed,
+#                   iteration_list = iteration_list,
+#                   max_attempts=500,
+#                   keep_percent_list=[0.05,0.1,0.2, 0.5, 0.75],
+#                   use_fast_mimic = True)
+# run_start = time.time()
+# df_run_stats, df_run_curves = mmc.run()
+# run_end = time.time()
+# vPrint('MIMIC runner time for RBC: {run_end - run_start}')
+# 
+# best_mimic_run = mmc.run_stats_df.iloc[np.argmax(mmc.run_stats_df['Fitness']),:]
+# best_pop_size = best_mimic_run['Population Size']
+# best_iters = best_mimic_run['max_iters']
+# best_state = best_mimic_run['State']
+# best_keep_pct = best_mimic_run['Keep Percent']
+# best_state = list(map(float,best_state.replace(']','').replace('[','').replace(' ','').split(',')))
+# 
+# kwargs['max_iters'] = best_iters
+# kwargs['keep_pct'] = best_keep_pct
+# kwargs['pop_size'] = best_pop_size
+# =============================================================================
 
 runProblem(problem=problem,title='RandomBitMatch',**kwargs)
 
-
+# =============================================================================
+# 
+# ###############################################################################
+# # Four Peaks Problem
+# ###############################################################################
+# print('######################################################################')
+# print('Four Peaks Problem')
+# print('######################################################################')
+# bits = 200
+# fitness = FourPeaks()
+# 
+# problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize = True, max_val = 2)
+# ##################################
+# # Solve using each algorithm
+# ##################################
+# kwargs = {
+#         'restarts':restarts,
+#         'max_iters':max_iters,
+#         'max_attempts':max_attempts,
+#         'pop_size':pop_size,
+#         'mutation_prob':mutation_prob,
+#         'keep_pct':0.1,
+#           }
+# 
+# runProblem(problem=problem,title='FourPeaks',**kwargs)
+# 
+# 
+# =============================================================================
 ###############################################################################
-# Knapsack Problem
+# Flip Flop Problem
 ###############################################################################
 print('######################################################################')
-print('Four Peaks Problem')
+print('Flip Flop Problem')
 print('######################################################################')
-bits = 100
-fitness = FourPeaks()
+bits = 200
+fitness = FlipFlop()
 
 problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize = True, max_val = 2)
 ##################################
@@ -449,76 +479,78 @@ kwargs = {
         'max_attempts':max_attempts,
         'pop_size':pop_size,
         'mutation_prob':mutation_prob,
-        'keep_pct':keep_pct,
+        'keep_pct':0.1,
           }
 
-runProblem(problem=problem,title='FourPeaks',**kwargs)
+runProblem(problem=problem,title='FlipFlop',**kwargs)
 
-
-###############################################################################
-# Knapsack Problem
-###############################################################################
-print('######################################################################')
-print('Knapsack Problem')
-print('######################################################################')
-n_items = 50
-weights = [0] # First item has zero weight and zero value
-values = [0]
-weights.extend([random.randint(1,n_items) for _ in range(n_items - 1)])
-values.extend([random.randint(0,n_items) for _ in range(n_items - 1)])
-max_weight_pct = 0.75
-weights = np.array(weights)
-values = np.array(values)
-
-# Custom Knapsack Fitness Function
-def custom_knapsack(state, weights, values, max_weight_pct):
-    """
-        State is the items to use in the knapsack.
-        Weights is the corresponding weight and values is the corresponding value
-        
-        Use with DiscreteOpt, number of states should match length and be integers
-    """
-    _w = np.ceil(max_weight_pct * np.sum(np.array(weights)))
-    #vPrint(f'Max weight: {_w}')
-    tot_weight = 0
-    tot_value = 0
-    for s in state:
-        s = int(s)
-        tot_weight += weights[s]
-        tot_value += values[s]
-    #vPrint(f'Total weight: {tot_weight}')
-    if tot_weight <= _w:
-        return tot_value
-    else:
-        return 0
-
-kwargs = {'weights':weights,
-          'values':values,
-          'max_weight_pct':max_weight_pct,
-          }
-
-fitness = CustomFitness(fitness_fn = custom_knapsack, problem_type='discrete', **kwargs)
-    
 # =============================================================================
-# fitness = Knapsack(weights = weights, values = values, max_weight_pct = max_weight_pct)
+# 
+# ###############################################################################
+# # Knapsack Problem
+# ###############################################################################
+# print('######################################################################')
+# print('Knapsack Problem')
+# print('######################################################################')
+# n_items = 50
+# weights = [0] # First item has zero weight and zero value
+# values = [0]
+# weights.extend([random.randint(1,n_items) for _ in range(n_items - 1)])
+# values.extend([random.randint(0,n_items) for _ in range(n_items - 1)])
+# max_weight_pct = 0.75
+# weights = np.array(weights)
+# values = np.array(values)
+# 
+# # Custom Knapsack Fitness Function
+# def custom_knapsack(state, weights, values, max_weight_pct):
+#     """
+#         State is the items to use in the knapsack.
+#         Weights is the corresponding weight and values is the corresponding value
+#         
+#         Use with DiscreteOpt, number of states should match length and be integers
+#     """
+#     _w = np.ceil(max_weight_pct * np.sum(np.array(weights)))
+#     #vPrint(f'Max weight: {_w}')
+#     tot_weight = 0
+#     tot_value = 0
+#     for s in state:
+#         s = int(s)
+#         tot_weight += weights[s]
+#         tot_value += values[s]
+#     #vPrint(f'Total weight: {tot_weight}')
+#     if tot_weight <= _w:
+#         return tot_value
+#     else:
+#         return 0
+# 
+# kwargs = {'weights':weights,
+#           'values':values,
+#           'max_weight_pct':max_weight_pct,
+#           }
+# 
+# fitness = CustomFitness(fitness_fn = custom_knapsack, problem_type='discrete', **kwargs)
+#     
+# # =============================================================================
+# # fitness = Knapsack(weights = weights, values = values, max_weight_pct = max_weight_pct)
+# # =============================================================================
+# 
+# problem = DiscreteOpt(length = n_items, fitness_fn = fitness, maximize=True, max_val=n_items)
+# 
+# ##################################
+# # Solve using each algorithm
+# ##################################
+# kwargs = {
+#         'restarts':restarts,
+#         'max_iters':max_iters,
+#         'max_attempts':max_attempts,
+#         'pop_size':pop_size,
+#         'mutation_prob':mutation_prob,
+#         'keep_pct':keep_pct,
+#           }
+# 
+# runProblem(problem=problem,title='Knapsack',**kwargs)
+# 
 # =============================================================================
-
-problem = DiscreteOpt(length = n_items, fitness_fn = fitness, maximize=True, max_val=n_items)
-
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters,
-        'max_attempts':max_attempts,
-        'pop_size':pop_size,
-        'mutation_prob':mutation_prob,
-        'keep_pct':keep_pct,
-          }
-
-runProblem(problem=problem,title='Knapsack',**kwargs)
-
 
 ###############################################################################
 ###############################################################################
