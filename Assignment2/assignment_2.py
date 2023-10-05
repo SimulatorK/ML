@@ -345,13 +345,6 @@ for n in n_cities:
 print('######################################################################')
 print('Random Bit Match')
 print('######################################################################')
-
-bits = 100
-n_bits = 4
-mask = np.random.randint(0,n_bits,bits)
-## Fitness function returns successively higher values for multiple adjacent matched bits
-## Function takes a  bit string that is meant to be matched
-## Non matching bits deduct a point
 def random_bit_match(state, mask):
     
     total_value = 0
@@ -364,8 +357,9 @@ def random_bit_match(state, mask):
             m = 0
             total_value -= 0
             total_value = max(total_value,0)
+    m = 0
     for i, s in enumerate(state[::-1]):
-        if s == mask[-i]:
+        if s == mask[-i-1]:
             m += 1
             total_value += m
         else:
@@ -373,64 +367,41 @@ def random_bit_match(state, mask):
             total_value -= 0
             total_value = max(total_value,0)
     
-    
-    
     return total_value
 
-optimal_val = random_bit_match(mask,mask)
-print(f'Optimal Random Bit Match = {optimal_val}')
-
-kwargs = {'mask':mask,}
-
-fitness = CustomFitness(fitness_fn = random_bit_match, problem_type='discrete', **kwargs)
-
-problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize=True, max_val=n_bits)
-
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters*10,
-        'max_attempts':max_attempts,
-        'pop_size':bits,
-        'mutation_prob':mutation_prob,
-        'keep_pct':0.1,
-          }
-
-# =============================================================================
-# # Find optimal
-# vPrint('Finding optimal mimic for RBM problem...')
-# experiment_name = 'RandomBitMatch'
-# iteration_list = list(map(int,np.linspace(10,1000,5)))
-# population_sizes = list(map(int,np.linspace(10,500,5)))
-# mmc = MIMICRunner(problem=problem,
-#                   experiment_name=experiment_name,
-#                   output_directory=os.getcwd(),
-#                   population_sizes = population_sizes,
-#                   seed=seed,
-#                   iteration_list = iteration_list,
-#                   max_attempts=500,
-#                   keep_percent_list=[0.05,0.1,0.2, 0.5, 0.75],
-#                   use_fast_mimic = True)
-# run_start = time.time()
-# df_run_stats, df_run_curves = mmc.run()
-# run_end = time.time()
-# vPrint('MIMIC runner time for RBC: {run_end - run_start}')
-# 
-# best_mimic_run = mmc.run_stats_df.iloc[np.argmax(mmc.run_stats_df['Fitness']),:]
-# best_pop_size = best_mimic_run['Population Size']
-# best_iters = best_mimic_run['max_iters']
-# best_state = best_mimic_run['State']
-# best_keep_pct = best_mimic_run['Keep Percent']
-# best_state = list(map(float,best_state.replace(']','').replace('[','').replace(' ','').split(',')))
-# 
-# kwargs['max_iters'] = best_iters
-# kwargs['keep_pct'] = best_keep_pct
-# kwargs['pop_size'] = best_pop_size
-# =============================================================================
-
-runProblem(problem=problem,title='RandomBitMatch',**kwargs)
+bits_ = [50,100,200]
+n_bits = 4
+for bits in bits_:
+    for seed in seeds:
+            
+        mask = np.random.randint(0,n_bits,bits)
+        ## Fitness function returns successively higher values for multiple adjacent matched bits
+        ## Function takes a  bit string that is meant to be matched
+        ## Non matching bits deduct a point
+        
+        
+        optimal_val = random_bit_match(mask,mask)
+        print(f'Optimal Random Bit Match = {optimal_val}')
+        
+        kwargs = {'mask':mask,}
+        
+        fitness = CustomFitness(fitness_fn = random_bit_match, problem_type='discrete', **kwargs)
+        
+        problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize=True, max_val=n_bits)
+        
+        ##################################
+        # Solve using each algorithm
+        ##################################
+        kwargs = {
+                'restarts':restarts,
+                'max_iters':max_iters*5,
+                'max_attempts':max_attempts,
+                'pop_size':bits,
+                'mutation_prob':mutation_prob,
+                'keep_pct':0.1,
+                  }
+        
+        runProblem(problem=problem,title=f'RandomBitMatch_Bits{bits}_{seed}',**kwargs)
 
 # =============================================================================
 # 
@@ -466,23 +437,26 @@ runProblem(problem=problem,title='RandomBitMatch',**kwargs)
 print('######################################################################')
 print('Flip Flop Problem')
 print('######################################################################')
-bits = 200
-fitness = FlipFlop()
 
-problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize = True, max_val = 2)
-##################################
-# Solve using each algorithm
-##################################
-kwargs = {
-        'restarts':restarts,
-        'max_iters':max_iters,
-        'max_attempts':max_attempts,
-        'pop_size':pop_size,
-        'mutation_prob':mutation_prob,
-        'keep_pct':0.1,
-          }
+bits_ = [100,200,300]
 
-runProblem(problem=problem,title='FlipFlop',**kwargs)
+for bits in bits_:
+    for seed in seeds:
+        fitness = FlipFlop()
+        problem = DiscreteOpt(length = bits, fitness_fn = fitness, maximize = True, max_val = 2)
+        ##################################
+        # Solve using each algorithm
+        ##################################
+        kwargs = {
+                'restarts':restarts,
+                'max_iters':max_iters,
+                'max_attempts':max_attempts,
+                'pop_size':pop_size,
+                'mutation_prob':mutation_prob,
+                'keep_pct':0.1,
+                  }
+        
+        runProblem(problem=problem,title=f'FlipFlop_Bits{bits}_seed{seed}',**kwargs)
 
 # =============================================================================
 # 
@@ -614,99 +588,100 @@ _sa_score_f1 = []
 _ga_score_f1 = []
 
 max_iters_ = list(map(int,np.linspace(10,1000,10)))
+max_iters = 1000
 
-for max_iters in max_iters_: 
-    #RHC
-    algo_rhc = algos[0]
-    model_rhc = NeuralNetwork(algorithm = algo_rhc,
-                          activation = 'relu',
-                          hidden_nodes = [Xdata.shape[1]],
-                          mutation_prob = 0.01,
-                          max_iters = max_iters,
-                          learning_rate = learning_rate,
-                          curve = True, 
-                          random_state = seed,
-                          loss_fn = loss_fn)
+# =============================================================================
+# for max_iters in max_iters_: 
+# =============================================================================
+#RHC
+algo_rhc = algos[0]
+model_rhc = NeuralNetwork(algorithm = algo_rhc,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed,
+                      loss_fn = loss_fn)
+
+start = time.time()
+model_rhc.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_rhc.score(Xtest,Ytest,sample_weights)
+y_pred = model_rhc.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_rhc}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+_rhc_score.append(score)
+_rhc_score_f1.append(score)
+
+#SA
+algo_sa = algos[1]
+model_sa = NeuralNetwork(algorithm = algo_sa,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed,
+                      loss_fn = loss_fn)
+start = time.time()
+model_sa.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_sa.score(Xtest,Ytest,sample_weights)
+y_pred = model_sa.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_sa}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+_sa_score.append(score)
+_sa_score_f1.append(score)
+
+#GA
+algo_ga = algos[2]
+model_ga = NeuralNetwork(algorithm = algo_ga,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = mutation_prob,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      pop_size = pop_size,
+                      curve = True, 
+                      random_state = seed,
+                      loss_fn = loss_fn)
+start = time.time()
+model_ga.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_ga.score(Xtest,Ytest,sample_weights)
+y_pred = model_ga.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_ga}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+_ga_score.append(score)
+_ga_score_f1.append(score)
     
-    start = time.time()
-    model_rhc.fit(Xtrain,Ytrain)
-    end = time.time()
-    fit_time = end - start
-    score = model_rhc.score(Xtest,Ytest,sample_weights)
-    y_pred = model_rhc.predict(Xtest)
-    f1 = f1_score(Ytest,y_pred)
-    vPrint(f'Algorithm: {algo_rhc}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-    _rhc_score.append(score)
-    _rhc_score_f1.append(score)
-    
-    #SA
-    algo_sa = algos[1]
-    model_sa = NeuralNetwork(algorithm = algo_sa,
-                          activation = 'relu',
-                          hidden_nodes = [Xdata.shape[1]],
-                          mutation_prob = 0.01,
-                          max_iters = max_iters,
-                          learning_rate = learning_rate,
-                          curve = True, 
-                          random_state = seed,
-                          loss_fn = loss_fn)
-    start = time.time()
-    model_sa.fit(Xtrain,Ytrain)
-    end = time.time()
-    fit_time = end - start
-    score = model_sa.score(Xtest,Ytest,sample_weights)
-    y_pred = model_sa.predict(Xtest)
-    f1 = f1_score(Ytest,y_pred)
-    vPrint(f'Algorithm: {algo_sa}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-    _sa_score.append(score)
-    _sa_score_f1.append(score)
-    
-    #GA
-    algo_ga = algos[2]
-    model_ga = NeuralNetwork(algorithm = algo_ga,
-                          activation = 'relu',
-                          hidden_nodes = [Xdata.shape[1]],
-                          mutation_prob = mutation_prob,
-                          max_iters = max_iters,
-                          learning_rate = learning_rate,
-                          pop_size = pop_size,
-                          curve = True, 
-                          random_state = seed,
-                          loss_fn = loss_fn)
-    start = time.time()
-    model_ga.fit(Xtrain,Ytrain)
-    end = time.time()
-    fit_time = end - start
-    score = model_ga.score(Xtest,Ytest,sample_weights)
-    y_pred = model_ga.predict(Xtest)
-    f1 = f1_score(Ytest,y_pred)
-    vPrint(f'Algorithm: {algo_ga}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-    _ga_score.append(score)
-    _ga_score_f1.append(score)
-    
-    # =============================================================================
-    # #GD
-    # algo_gd = algos[3]
-    # max_iters = 1000
-    # model_gd = NeuralNetwork(algorithm = algo_gd,
-    #                       activation = 'relu',
-    #                       hidden_nodes = [Xdata.shape[1]],
-    #                       mutation_prob = 0.01,
-    #                       max_iters = max_iters,
-    #                       learning_rate = learning_rate,
-    #                       curve = True, 
-    #                       random_state = seed,
-    #                       loss_fn = loss_fn)
-    # start = time.time()
-    # model_gd.fit(Xtrain,Ytrain)
-    # end = time.time()
-    # fit_time = end - start
-    # score = model_gd.score(Xtest,Ytest)
-    # y_pred = model_gd.predict(Xtest)
-    # f1 = f1_score(Ytest,y_pred)
-    # vPrint(f'Algorithm: {algo_gd}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-    # 
-    # =============================================================================
+#GD
+algo_gd = algos[3]
+max_iters = 1000
+model_gd = NeuralNetwork(algorithm = algo_gd,
+                      activation = 'relu',
+                      hidden_nodes = [Xdata.shape[1]],
+                      mutation_prob = 0.01,
+                      max_iters = max_iters,
+                      learning_rate = learning_rate,
+                      curve = True, 
+                      random_state = seed,
+                      loss_fn = loss_fn)
+start = time.time()
+model_gd.fit(Xtrain,Ytrain)
+end = time.time()
+fit_time = end - start
+score = model_gd.score(Xtest,Ytest)
+y_pred = model_gd.predict(Xtest)
+f1 = f1_score(Ytest,y_pred)
+vPrint(f'Algorithm: {algo_gd}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
+
 scaler = preprocessing.MinMaxScaler()
 
 _rhc = -1*model_rhc.fitness_curve[:,0]
