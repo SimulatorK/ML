@@ -595,6 +595,7 @@ max_iters = 1000
 # =============================================================================
 #RHC
 algo_rhc = algos[0]
+max_iters = 4000
 model_rhc = NeuralNetwork(algorithm = algo_rhc,
                       activation = 'relu',
                       hidden_nodes = [Xdata.shape[1]],
@@ -605,19 +606,22 @@ model_rhc = NeuralNetwork(algorithm = algo_rhc,
                       random_state = seed,
                       loss_fn = loss_fn)
 
-start = time.time()
+start_rhc = time.time()
 model_rhc.fit(Xtrain,Ytrain)
-end = time.time()
-fit_time = end - start
-score = model_rhc.score(Xtest,Ytest,sample_weights)
+end_rhc = time.time()
+fit_time_rhc = end_rhc - start_rhc
+score_rhc = model_rhc.score(Xtest,Ytest,sample_weights)
+score_rhc_in = model_rhc.score(Xtrain,Ytrain)
 y_pred = model_rhc.predict(Xtest)
 f1 = f1_score(Ytest,y_pred)
-vPrint(f'Algorithm: {algo_rhc}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-_rhc_score.append(score)
-_rhc_score_f1.append(score)
+vPrint(f'Algorithm: {algo_rhc}\n\tScore = {score_rhc}\n\tF1 = {f1}\n\tFit Time = {fit_time_rhc}')
+_rhc_score.append(score_rhc)
+_rhc_score_f1.append(score_rhc)
 
 #SA
 algo_sa = algos[1]
+
+max_iters = 4000
 model_sa = NeuralNetwork(algorithm = algo_sa,
                       activation = 'relu',
                       hidden_nodes = [Xdata.shape[1]],
@@ -627,19 +631,20 @@ model_sa = NeuralNetwork(algorithm = algo_sa,
                       curve = True, 
                       random_state = seed,
                       loss_fn = loss_fn)
-start = time.time()
+start_sa = time.time()
 model_sa.fit(Xtrain,Ytrain)
-end = time.time()
-fit_time = end - start
-score = model_sa.score(Xtest,Ytest,sample_weights)
+end_sa = time.time()
+fit_time_sa = end_sa - start_sa
+score_sa = model_sa.score(Xtest,Ytest,sample_weights)
 y_pred = model_sa.predict(Xtest)
 f1 = f1_score(Ytest,y_pred)
-vPrint(f'Algorithm: {algo_sa}\n\tScore = {score}\n\tF1 = {f1}\n\tFit Time = {fit_time}')
-_sa_score.append(score)
-_sa_score_f1.append(score)
+vPrint(f'Algorithm: {algo_sa}\n\tScore = {score_sa}\n\tF1 = {f1}\n\tFit Time = {fit_time_sa}')
+_sa_score.append(score_sa)
+_sa_score_f1.append(score_sa)
 
 #GA
 algo_ga = algos[2]
+max_iters = 1000
 model_ga = NeuralNetwork(algorithm = algo_ga,
                       activation = 'relu',
                       hidden_nodes = [Xdata.shape[1]],
@@ -665,11 +670,8 @@ _ga_score_f1.append(score)
 algo_gd = algos[3]
 max_iters = 1000
 model_gd = NeuralNetwork(algorithm = algo_gd,
-                      activation = 'relu',
-                      hidden_nodes = [Xdata.shape[1]],
-                      mutation_prob = 0.01,
                       max_iters = max_iters,
-                      learning_rate = learning_rate,
+                      learning_rate = 0.01,
                       curve = True, 
                       random_state = seed,
                       loss_fn = loss_fn)
@@ -687,6 +689,7 @@ scaler = preprocessing.MinMaxScaler()
 _rhc = -1*model_rhc.fitness_curve[:,0]
 _sa = -1*model_sa.fitness_curve[:,0]
 _ga = -1*model_ga.fitness_curve[:,0]
+_gd = 1*model_gd.fitness_curve
 # =============================================================================
 # _rhc = scaler.fit_transform(model_rhc.fitness_curve[:,0].reshape(-1,1))
 # _sa = scaler.fit_transform(model_sa.fitness_curve[:,0].reshape(-1,1))
@@ -699,10 +702,15 @@ ax.plot(_rhc,label=f'{algo_rhc}')
 ## Add data to plot
 ax.plot(_sa,label=f'{algo_sa}')
 ## Add data to plot
+# =============================================================================
+# ax.plot(_gd,label=f'{algo_gd}')
+# =============================================================================
+## Add data to plot
 ax.plot(_ga,label=f'{algo_ga}')
 ###### FINISH PLOT
 plt.grid()
 plt.legend()
+plt.xlim((0,1000))
 plt.xlabel('Iteration')
 plt.ylabel('Fitness')
 plt.tight_layout()
