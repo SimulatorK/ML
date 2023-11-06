@@ -242,6 +242,8 @@ for dataSetName, dataset in datasets.items():
     Xtrain = scaler.fit_transform(Xtrain)
     Xtest = scaler.transform(Xtest)
     
+    n_features_ = range(2,n_features)
+    
     ###########################################################################
     # ANALYSIS
     ###########################################################################    
@@ -252,7 +254,6 @@ for dataSetName, dataset in datasets.items():
     
     pca_mse = []
     pca_k = []
-    n_features_ = range(2,n_features)
     for n_f in n_features_:
             
         # Transform training data
@@ -374,22 +375,23 @@ for dataSetName, dataset in datasets.items():
     # Transform training data
     grp_mse = []
     grp_k_mean = []
-    for n_f in n_features_:
+    grp_n_features = range(2,200)
+    for n_f in grp_n_features:
         grp = GaussianRandomProjection(n_components=n_f,random_state=seed,eps = 0.1)
         xgrp = grp.fit_transform(Xtrain)
-        xgrp_i = np.dot(xgrp,grp.components_)
+        xgrp_i = xgrp.dot(grp.components_) + np.mean(Xtrain,axis=0)
         grp_mse.append(np.square(Xtrain-xgrp_i).mean())
         grp_k_mean.append(ss.kurtosis(xgrp).mean())
-    
+
     grp_k_v_mse = np.array(grp_k_mean) / np.array(grp_mse)
     fig, ax = plt.subplots(figsize=(8,6),dpi=200)
-    ax.plot(n_features_,grp_k_v_mse)
+    ax.plot(grp_n_features,grp_mse)
     ax.grid()
     ax.set_xlabel('# of Components')
-    ax.set_ylabel('Mean Kurtosis / MSE')
-    plt.title(f'GRP_{dataSetName}_MSE')
+    ax.set_ylabel('Reconstruction Error')
+    plt.title(f'GRP_{dataSetName}_ReconstructionError')
     fig.tight_layout()
-    plt.savefig(f'Images/GRP_{dataSetName}_Kurtosis_v_MSE.png')
+    plt.savefig(f'Images/GRP_{dataSetName}_ReconstructionError.png')
     plt.show()
 
     # Plot first and second GRP with cluster color
@@ -656,8 +658,16 @@ for dataSetName, dataset in datasets.items():
     xica_ = ica_.fit_transform(Xtrain)
     
     # Pick grp based on maximizing the ratio between Kurtosis / MSE
-    grp_max_k_mse_i = np.argmax((np.array(grp_k_mean) / np.array(grp_mse)))
-    grp_n_comps = n_features_[grp_max_k_mse_i]
+    try:
+        dataset == ds1
+        grp_n_comps = 13
+    except:
+        grp_n_comps = 10
+        
+# =============================================================================
+#     grp_min_mse_i = np.argmin(np.array(grp_mse)[np.array(grp_n_features) <= n_features])
+#     grp_n_comps = grp_n_features[grp_min_mse_i]
+# =============================================================================
     grp_ = GaussianRandomProjection(n_components=grp_n_comps,random_state=seed,eps = 0.1)
     xgrp_ = grp_.fit_transform(Xtrain)
     
