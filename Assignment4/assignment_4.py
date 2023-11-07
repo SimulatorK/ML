@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt
 from time import time
 
 import itertools
+import gym
+import pygame
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -49,15 +51,23 @@ seed = 903860493
 if __name__ == '__main__':
     os.chdir(os.path.split(__file__)[0])
  
+# Import bettermdptools
+os.chdir('..')   
+import bettermdptools
+os.chdir('Assignment4')
+
+###############################################################################
+
+envs = ['MountainCarContinuous-v0',]#'Blackjack-v1']
 
 
+for e in envs:
+    
+    env = gym.make(e)
 
+    
 
-
-
-
-
-
+    
 
 
 
