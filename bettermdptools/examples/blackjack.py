@@ -15,8 +15,8 @@ import pickle
 
 
 class Blackjack:
-    def __init__(self):
-        self._env = gym.make('Blackjack-v1', render_mode=None)
+    def __init__(self,render_mode=None):
+        self._env = gym.make('Blackjack-v1', render_mode=render_mode)
         # Explanation of convert_state_obs lambda:
         # def function(state, done):
         # 	if done:

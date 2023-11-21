@@ -20,7 +20,7 @@ class Plots:
         if not math.modf(math.sqrt(len(data)))[0] == 0.0:
             warnings.warn("Grid map expected.  Check data length")
         else:
-            data = np.around(np.array(data).reshape((8, 8)), 2)
+            data = np.around(np.array(data).reshape((int(math.sqrt(len(data))),int(math.sqrt(len(data))))), 2)
             df = pd.DataFrame(data=data)
             my_colors = ((0.0, 0.0, 0.0, 1.0), (0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
             cmap = LinearSegmentedColormap.from_list('Custom', my_colors, len(my_colors))
@@ -36,7 +36,7 @@ class Plots:
         if not math.modf(math.sqrt(len(data)))[0] == 0.0:
             warnings.warn("Grid map expected.  Check data length")
         else:
-            data = np.around(np.array(data).reshape((8, 8)), 2)
+            data = np.around(np.array(data).reshape((int(math.sqrt(len(data))),int(math.sqrt(len(data))))), 2)
             df = pd.DataFrame(data=data)
             sns.heatmap(df, annot=True).set_title(label)
             plt.show()
@@ -56,14 +56,14 @@ if __name__ == "__main__":
     # VI/PI grid_world_policy_plot
     # V, V_track, pi = Planner(frozen_lake.env.P).value_iteration()
     # n_states = frozen_lake.env.observation_space.n
-    # new_pi = list(map(lambda x: pi(x), range(n_states)))
+    # new_pi = list(map(lambda x: pi[x], range(n_states)))
     # s = int(math.sqrt(n_states))
     # Plots.grid_world_policy_plot(np.array(new_pi), "Grid World Policy")
 
     # Q-learning grid_world_policy_plot
     # Q, V, pi, Q_track, pi_track = RL(frozen_lake.env).q_learning()
     # n_states = frozen_lake.env.observation_space.n
-    # new_pi = list(map(lambda x: pi(x), range(n_states)))
+    # new_pi = list(map(lambda x: pi[x], range(n_states)))
     # s = int(math.sqrt(n_states))
     # Plots.grid_world_policy_plot(np.array(new_pi), "Grid World Policy")
 
