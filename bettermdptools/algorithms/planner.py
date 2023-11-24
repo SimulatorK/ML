@@ -79,7 +79,7 @@ class Planner:
         return V, V_track, pi
 
     @print_runtime
-    def policy_iteration(self, gamma=1.0, n_iters=50, theta=1e-10):
+    def policy_iteration(self, gamma=1.0, n_iters=1000, theta=1e-10):
         """
         PARAMETERS:
 

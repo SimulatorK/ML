@@ -115,7 +115,7 @@ np.random.seed(seed)
 n_iters = 10000
 
 ###############################################################################
-f = gym.make('FrozenLake-v1',render_mode = 'rgb_array', desc=generate_random_map(size=24),is_slippery=True)
+f = gym.make('FrozenLake-v1',render_mode = 'rgb_array', desc=generate_random_map(size=20),is_slippery=True)
 b = Blackjack(render_mode="rgb_array")
 c = gym.make("MountainCar-v0",render_mode='rgb_array')
 
@@ -123,7 +123,7 @@ envs = [f,
         b,
         c,]
 
-names = ['FrozenLake-v1 8x8','Blackjack','MountainCar-v0']
+names = ['FrozenLake','Blackjack','MountainCar-v0']
 
 ## FrozenLake
 env = envs[0]
@@ -135,7 +135,7 @@ def reward_f(r):
     else:
         return r-0.01
 
-env = TransformReward(env, lambda r: reward_f(r))
+#env = TransformReward(env, lambda r: reward_f(r))
 
 ###########################################################################
 # Value & Policy Iteration
@@ -144,7 +144,7 @@ env = TransformReward(env, lambda r: reward_f(r))
 vPrint('Value Iteration:')
 start = time()
 env.reset(seed=seed)
-V, V_track, pi = Planner(env.P).value_iteration(n_iters = n_iters, gamma=0.99)    
+V, V_track, pi = Planner(env.P).value_iteration(gamma = 0.99)    
 end = time()
 printTime(start,end)
 avg_r_v = [sum(V_track[i]).mean() for i in range(len(V_track))]
@@ -158,11 +158,26 @@ new_pi_v = list(map(lambda x: pi[x], range(n_states)))
 s = int(math.sqrt(n_states))
 Plots.grid_world_policy_plot(np.array(new_pi_v), "Value Iteration Policy")
 
+test_scores_v = TestEnv.test_env(env=env,
+                                 seed=seed,
+                                 render=False,
+                                 pi=pi,
+                                 user_input=False,
+                                 n_iters = n_iters)
+vPrint("Value Iterations Results:")
+test_scores_v_c = Counter(test_scores_v)
+wins = test_scores_v_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_v_c[0]
+losses_p = round(losses / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%)\n')
+
+
 # Policy
 vPrint('Policy Iteration:')
 start = time()
 env.reset(seed=seed)
-V, V_track, pi = Planner(env.P).policy_iteration() 
+V, V_track, pi = Planner(env.P).policy_iteration(gamma = 0.99) 
 end = time()
 printTime(start,end)
 avg_r_p = [sum(V_track[i]).mean() for i in range(len(V_track))]
@@ -178,6 +193,19 @@ s = int(math.sqrt(n_states))
 Plots.grid_world_policy_plot(np.array(new_pi_p), "Policy Iteration Policy")
 
 
+test_scores_p = TestEnv.test_env(env=env,
+                                 seed=seed,
+                                 render=False,
+                                 pi=pi,
+                                 user_input=False,
+                                 n_iters = n_iters)
+vPrint("Value Iterations Results:")
+test_scores_p_c = Counter(test_scores_p)
+wins = test_scores_p_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_p_c[0]
+losses_p = round(losses / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%)\n')
 
 # Only plot up to where it converges
 fig, ax = plt.subplots(figsize=(8,6),dpi = 200)
@@ -201,45 +229,62 @@ plt.show()
 vPrint('Q-Learning:')
 
 gamma = 1.0 #Discount factor
-init_alpha = 1 #Learning rate
+init_alpha = 1.0 #Learning rate
 min_alpha = 0.1
 alpha_decay_ratio = 0.4
 init_epsilon = 1.0 #Initial epsilon value for epsilon greedy strategy
-min_epsilon = 0.1
+min_epsilon = 0.9
 epsilon_decay_ratio=0.9999
 n_episodes=1e6
+# =============================================================================
+# 
+# epsilon_schedule = RL.decay_schedule(init_value = init_epsilon,
+#                   min_value = min_epsilon, 
+#                   decay_ratio = epsilon_decay_ratio, 
+#                   max_steps = n_episodes, log_start=-2, log_base=10)
+# 
+# learning_schedule = RL.decay_schedule(init_value = init_alpha,
+#                   min_value = min_alpha, 
+#                   decay_ratio = alpha_decay_ratio, 
+#                   max_steps = n_episodes, log_start=-2, log_base=10)
+# =============================================================================
 
-epsilon_schedule = RL.decay_schedule(init_value = init_epsilon,
-                  min_value = min_epsilon, 
-                  decay_ratio = epsilon_decay_ratio, 
-                  max_steps = n_episodes, log_start=-2, log_base=10)
-
-learning_schedule = RL.decay_schedule(init_value = init_alpha,
-                  min_value = min_alpha, 
-                  decay_ratio = alpha_decay_ratio, 
-                  max_steps = n_episodes, log_start=-2, log_base=10)
-
-fig, ax = plt.subplots(figsize=(8,6),dpi = 200)
-ax.plot(range(n_episodes),epsilon_schedule,label = 'Epsilon Schedule')
-ax.plot(range(n_episodes),learning_schedule,label = 'Learning Schedule')
-ax.set_xlabel('Episode')
-ax.set_ylabel('Value')
-ax.legend()
-plt.tight_layout()
-plt.savefig('Images/Decay_Schedules_Q-Learning.png')
-plt.show()
+# =============================================================================
+# fig, ax = plt.subplots(figsize=(8,6),dpi = 200)
+# ax.plot(range(n_episodes),epsilon_schedule,label = 'Epsilon Schedule')
+# ax.plot(range(n_episodes),learning_schedule,label = 'Learning Schedule')
+# ax.set_xlabel('Episode')
+# ax.set_ylabel('Value')
+# ax.legend()
+# plt.tight_layout()
+# plt.savefig('Images/Decay_Schedules_Q-Learning.png')
+# plt.show()
+# =============================================================================
 
 
-gammas = np.linspace(1,1.0,1) #Discount factor
+gammas = np.linspace(0.9,1.0,1) #Discount factor
 init_alphas = np.linspace(1,1.0,1) #Learning rate
-min_alphas = np.linspace(0.01,0.01,1)
-alpha_decay_ratios = np.linspace(0.1,0.7,10)
-init_epsilons = np.linspace(1,1.0,1) #Initial epsilon value for epsilon greedy strategy
-min_epsilons = np.linspace(0.1,0.1,1)
-epsilon_decay_ratios = np.linspace(0.99,0.99999999,3)
-n_episodes_ = [1e6,]
+min_alphas = np.linspace(0.1,0.1,1)
+alpha_decay_ratios = np.linspace(0.5,0.5,1)
+init_epsilons = np.linspace(1.0,1.0,1) #Initial epsilon value for epsilon greedy strategy
+min_epsilons = np.linspace(0.1,0.9,1)
+epsilon_decay_ratios = np.linspace(0.99999999,0.99999999,1)
+n_episodes_ = [5e6,]
 
 tot = len(gammas) * len(init_alphas) * len(min_alphas) * len(alpha_decay_ratios) * len(init_epsilons) * len(min_epsilons) * len(epsilon_decay_ratios ) * len(n_episodes_)
+
+rl_model = RL(env)
+
+def custom_decay_schedule(r):
+    
+    def func(init_val,min_val,ratio,n_episodes):
+        ratio = r
+        return np.linspace(init_val,min_val,n_episodes)**ratio
+
+    return func
+
+rl_model.decay_schedule = custom_decay_schedule(0.5)
+
 
 for g, gamma in enumerate(gammas):
     for ia, init_alpha in enumerate(init_alphas):
@@ -250,11 +295,10 @@ for g, gamma in enumerate(gammas):
                         for edr, epsilon_decay_ratio in enumerate(epsilon_decay_ratios):
                             for n, n_episodes in enumerate(n_episodes_):
                                 
-                                env.reset(seed=seed)                                
-                                env = TransformReward(env, lambda r: reward_f(r))
+                                env.reset(seed=seed)                               
                                 print(f'{gamma}:{init_alpha}:{min_alpha}:{alpha_decay_ratio}:{init_epsilon}:{min_epsilon}:{epsilon_decay_ratio}:{n_episodes}')
                                 
-                                Q, V, pi, Q_track, pi_track = RL(env).q_learning(nS=env.observation_space.n,
+                                Q, V, pi, Q_track, pi_track = rl_model.q_learning(nS=env.observation_space.n,
                                                                                     nA=env.action_space.n,
                                                                                     gamma=gamma,
                                                                                     init_alpha=init_alpha,
@@ -276,57 +320,81 @@ for g, gamma in enumerate(gammas):
                                 Plots.grid_values_heat_map(V, "Q-Learning State Values")
 
 
+epsilon_schedule = rl_model.decay_schedule(init_val = init_epsilon,
+                  min_val = min_epsilon, 
+                  ratio = epsilon_decay_ratio, 
+                  n_episodes = int(n_episodes))
 
+learning_schedule = rl_model.decay_schedule(init_val = init_alpha,
+                  min_val = min_alpha, 
+                  ratio = alpha_decay_ratio, 
+                  n_episodes = int(n_episodes))
 
+fig,ax = plt.subplots(figsize=(8,6),dpi=200)
+ax.plot(range(int(n_episodes)),epsilon_schedule,label="Epsilon")
+ax.plot(range(int(n_episodes)),learning_schedule,label="Alpha")
+ax.set_xlabel('Episode')
+ax.set_ylabel('Value')
+plt.legend()
+plt.tight_layout()
+plt.show()
 
 
 ###############################################################################
 # Blackjack
 ###############################################################################
-
+n_iters = 10000
 Q, V, pi, Q_track, pi_track = RL(b.env).q_learning(b.n_states, b.n_actions, b.convert_state_obs)
-
-test_scores = TestEnv.test_env(env=b.env, seed=seed, render=True, pi=pi, user_input=False,
-                               convert_state_obs=b.convert_state_obs)
+test_scores_q = TestEnv.test_env(env=b.env, seed=seed, render=False, pi=pi, user_input=False,
+                               convert_state_obs=b.convert_state_obs, n_iters = n_iters)
+vPrint("Q-Learning Results:")
+test_scores_q_c = Counter(test_scores_q)
+wins = test_scores_q_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_q_c[-1]
+losses_p = round(losses / n_iters * 100,2)
+ties = test_scores_q_c[0]
+ties_p = round(ties / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%); Ties: {ties} ({ties_p}%)\n')
 
 max_q_value_per_iter = np.amax(np.amax(Q_track, axis=2), axis=1)
 Plots.v_iters_plot(max_q_value_per_iter, "Max Q-Values")
-
-# Create P for blackjack
-P = {}
-terminated = truncated = False
-
-for _ in range(1000):
-    
-    state0 = b.env.reset(seed=seed)[0]
-    while not (terminated or truncated):
-        
-        action = b.env.action_space.sample()
-        next_state, reward, terminated, truncated, _ = b.env.step(action)
-        
-        if state0 not in P:
-            
-            P[state0] = {}
-        
-    
-            if action not in P[state0]:
-                v_ = (1, next_state, reward, truncated or terminated)
-                
-                P[state0][action] = [v_]
-                
-        else:
-            
-            
-
-        state0 = next_state
-        
-    
     
 
-V, V_track, pi = Planner(b.env.P).value_iteration()
-V, V_track, pi = Planner(frozen_lake.env.P).policy_iteration()
+V, V_track, pi = Planner(b.P).value_iteration()
 max_value_per_iter = np.amax(V_track, axis=1)
-Plots.v_iters_plot(max_value_per_iter, "Max State Values")
+
+test_scores_v = TestEnv.test_env(env=b.env, seed=seed, render=False, pi=pi, user_input=False,
+                               convert_state_obs=b.convert_state_obs, n_iters = n_iters)
+
+Plots.v_iters_plot(max_value_per_iter, "Value Iteration State Values")
+vPrint("Value Iterations Results:")
+test_scores_v_c = Counter(test_scores_v)
+wins = test_scores_v_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_v_c[-1]
+losses_p = round(losses / n_iters * 100,2)
+ties = test_scores_v_c[0]
+ties_p = round(ties / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%); Ties: {ties} ({ties_p}%)\n')
+
+
+V, V_track, pi = Planner(b.P).policy_iteration()
+max_value_per_iter = np.amax(V_track, axis=1)
+Plots.v_iters_plot(max_value_per_iter, "Policy Iteration State Values")
+
+
+test_scores_p = TestEnv.test_env(env=b.env, seed=seed, render=False, pi=pi, user_input=False,
+                               convert_state_obs=b.convert_state_obs, n_iters = n_iters)
+vPrint("Policy Iterations Results:")
+test_scores_p_c = Counter(test_scores_p)
+wins = test_scores_p_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_p_c[-1]
+losses_p = round(losses / n_iters * 100,2)
+ties = test_scores_p_c[0]
+ties_p = round(ties / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%); Ties: {ties} ({ties_p}%)\n')
 
 
 # =============================================================================

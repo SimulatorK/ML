@@ -32,7 +32,16 @@ class RL:
         self.env = env
         self.callbacks = MyCallbacks()
         self.render = False
-
+    
+    def shaped_reward(self,done, reward):
+        if done:
+            return -1
+        else:
+            if reward <= 0:
+                return -0.04
+            else:
+                return reward
+    
     @staticmethod
     def decay_schedule(init_value, min_value, decay_ratio, max_steps, log_start=-2, log_base=10):
         """
@@ -147,6 +156,9 @@ class RL:
             nA=self.env.action_space.n
         pi_track = []
         Q = np.zeros((nS, nA), dtype=np.float64)
+        #Q = np.random.randint(low=0,high=nA,size=(nS,nA),dtype=int)
+        # Initialize a random Q table
+        
         Q_track = np.zeros((n_episodes, nS, nA), dtype=np.float64)
         # Explanation of lambda:
         # def select_action(state, Q, epsilon):
@@ -176,6 +188,9 @@ class RL:
                     warnings.warn("Occasional render has been deprecated by openAI.  Use test_env.py to render.")
                 action = select_action(state, Q, epsilons[e])
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
+                
+                reward = self.shaped_reward(terminated or truncated, reward)
+                
                 if truncated:
                     warnings.warn("Episode was truncated.  Bootstrapping 0 reward.")
                 done = terminated or truncated

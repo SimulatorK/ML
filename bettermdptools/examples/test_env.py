@@ -28,21 +28,21 @@ class TestEnv:
 
         render {Boolean}:
             openAI human render mode
-
+        
         n_iters {int}, default = 10:
             Number of iterations to simulate the agent for
-
+        
         pi {lambda}:
             Policy used to calculate action value at a given state
-
+        
         user_input {Boolean}:
             Prompt for letting user decide which action to take at a given state
-
+        
         convert_state_obs {lambda}:
             The state conversion utilized in BlackJack ToyText problem.
             Returns three state tuple as one of the 280 converted states.
 
-
+        
         Returns
         ----------------------------
         test_scores {list}:
@@ -55,7 +55,7 @@ class TestEnv:
         n_actions = env.action_space.n
         test_scores = np.full([n_iters], np.nan)
         for i in range(0, n_iters):
-            state, info = env.reset(seed=seed)
+            state, info = env.reset()
             done = False
             state = convert_state_obs(state, done)
             total_reward = 0
