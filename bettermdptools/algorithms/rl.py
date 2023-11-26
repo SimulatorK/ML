@@ -33,15 +33,18 @@ class RL:
         self.callbacks = MyCallbacks()
         self.render = False
     
-    def shaped_reward(self,done, reward):
-        if done:
-            return -1
-        else:
-            if reward <= 0:
-                return -0.04
+    def shaped_reward(self,done, reward, shapeit = True):
+        if shapeit:
+            if done:
+                return -1
             else:
-                return reward
-    
+                if reward <= 0:
+                    return -0.05
+                else:
+                    return reward
+        else:
+            return reward
+        
     @staticmethod
     def decay_schedule(init_value, min_value, decay_ratio, max_steps, log_start=-2, log_base=10):
         """
@@ -80,7 +83,46 @@ class RL:
         values = (init_value - min_value) * values + min_value
         values = np.pad(values, (0, rem_steps), 'edge')
         return values
+    
+    @staticmethod
+    def decay_schedule_a(init_value, min_value, decay_ratio, max_steps, log_start=-2, log_base=10):
+        """
+        Parameters
+        ----------------------------
+        init_value {float}:
+            Initial value of the quantity being decayed
 
+        min_value {float}:
+            Minimum value init_value is allowed to decay to
+
+        decay_ratio {float}:
+            The exponential factor exp(decay_ratio).
+            Updated decayed value is calculated as
+
+        max_steps {int}:
+            Max iteration steps for decaying init_value
+
+        log_start {array-like}, default = -2:
+            Starting value of the decay sequence.
+            Default value starts it at 0.01
+
+        log_base {array-like}, default = 10:
+            Base of the log space.
+
+
+        Returns
+        ----------------------------
+        values {array-like}, shape(max_steps):
+            Decay values where values[i] is the value used at i-th step
+        """
+        decay_steps = int(max_steps * decay_ratio)
+        rem_steps = max_steps - decay_steps
+        values = np.logspace(log_start, 0, decay_steps, base=log_base, endpoint=True)[::-1]
+        values = (values - values.min()) / (values.max() - values.min())
+        values = (init_value - min_value) * values + min_value
+        values = np.pad(values, (0, rem_steps), 'edge')
+        return values
+    
     @print_runtime
     def q_learning(self,
                    nS=None,
@@ -93,7 +135,8 @@ class RL:
                    init_epsilon=1.0,
                    min_epsilon=0.1,
                    epsilon_decay_ratio=0.9,
-                   n_episodes=10000):
+                   n_episodes=10000,
+                   isFL = False):
         """
         Parameters
         ----------------------------
@@ -166,10 +209,23 @@ class RL:
         #       return np.argmax(Q[state])
         #   else:
         #       return np.random.randint(len(Q[state]))
+        # if isFL, initialize Q_track according to euclidean distance
+# =============================================================================
+#         if isFL:
+#             for i in range(nS):
+#                 for ii in range(nA):
+#                     if i == nS-1 and ii == nA-1:
+#                         v = 0
+#                     else:                        
+#                         v = (i+ii)/(nS+nA) # 
+# 
+#                     Q[i][ii] = v
+# =============================================================================
+                
         select_action = lambda state, Q, epsilon: np.argmax(Q[state]) \
             if np.random.random() > epsilon \
             else np.random.randint(len(Q[state]))
-        alphas = RL.decay_schedule(init_alpha,
+        alphas = RL.decay_schedule_a(init_alpha,
                                 min_alpha,
                                 alpha_decay_ratio,
                                 n_episodes)
@@ -188,8 +244,8 @@ class RL:
                     warnings.warn("Occasional render has been deprecated by openAI.  Use test_env.py to render.")
                 action = select_action(state, Q, epsilons[e])
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
-                
-                reward = self.shaped_reward(terminated or truncated, reward)
+                if isFL:
+                    reward = self.shaped_reward(terminated or truncated, reward)
                 
                 if truncated:
                     warnings.warn("Episode was truncated.  Bootstrapping 0 reward.")
