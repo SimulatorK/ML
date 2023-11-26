@@ -115,7 +115,31 @@ np.random.seed(seed)
 n_iters = 10000
 
 ###############################################################################
-f = gym.make('FrozenLake-v1',render_mode = 'rgb_array', desc=generate_random_map(size=20),is_slippery=True)
+desc=[
+      "SFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFFFFFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFH",
+      "FFFFFFFFHHHFFFFFFFFG",
+      ]
+f = gym.make('FrozenLake-v1',render_mode = 'rgb_array', desc=desc,
+             #generate_random_map(size=20),
+             is_slippery=True)
 b = Blackjack(render_mode="rgb_array")
 c = gym.make("MountainCar-v0",render_mode='rgb_array')
 
@@ -218,7 +242,9 @@ plt.legend()
 plt.title(title_)
 fig.tight_layout()
 ax.grid()
-plt.savefig(f'Images/{title_}.png')
+# =============================================================================
+# plt.savefig(f'Images/{title_}.png')
+# =============================================================================
 plt.show()
 
 
@@ -262,9 +288,9 @@ n_episodes=1e6
 # =============================================================================
 
 
-gammas = np.linspace(0.9,1.0,1) #Discount factor
-init_alphas = np.linspace(1,1.0,1) #Learning rate
-min_alphas = np.linspace(0.1,0.1,1)
+gammas = np.linspace(0.999,1.0,1) #Discount factor
+init_alphas = np.linspace(0.7,0.7,1) #Learning rate
+min_alphas = np.linspace(0.01,0.01,1)
 alpha_decay_ratios = np.linspace(0.5,0.5,1)
 init_epsilons = np.linspace(1.0,1.0,1) #Initial epsilon value for epsilon greedy strategy
 min_epsilons = np.linspace(0.1,0.9,1)
@@ -275,17 +301,33 @@ tot = len(gammas) * len(init_alphas) * len(min_alphas) * len(alpha_decay_ratios)
 
 rl_model = RL(env)
 
-def custom_decay_schedule(r):
+def custom_decay_schedule(r,f=1):
     
     def func(init_val,min_val,ratio,n_episodes):
         ratio = r
         return np.linspace(init_val,min_val,n_episodes)**ratio
+    
+    def func2(init_val, min_val, ratio, n_episodes):
+        decay_steps = int(n_episodes * ratio)
+        print(decay_steps)
+        rem_steps = n_episodes - decay_steps
+        print(rem_steps)
+        values = np.logspace(init_val, 0, decay_steps, base=r, endpoint=True)[::-1]
+        values = 1/-values
+        values = (values - values.min()) / (values.max() - values.min())
+        values = (init_val - min_val) * values + min_val
+        values = np.pad(values, (0, rem_steps), 'edge')
+        return values
+    
+    if f:
+        return func
+    else:
+        
+        return func2
 
-    return func
-
-rl_model.decay_schedule = custom_decay_schedule(0.5)
 
 
+env.env.spec.max_episode_steps = 200 # Alter max steps
 for g, gamma in enumerate(gammas):
     for ia, init_alpha in enumerate(init_alphas):
         for ma, min_alpha in enumerate(min_alphas):
@@ -297,6 +339,27 @@ for g, gamma in enumerate(gammas):
                                 
                                 env.reset(seed=seed)                               
                                 print(f'{gamma}:{init_alpha}:{min_alpha}:{alpha_decay_ratio}:{init_epsilon}:{min_epsilon}:{epsilon_decay_ratio}:{n_episodes}')
+                                rl_model.decay_schedule = custom_decay_schedule(0.5,f=1)
+                                rl_model.decay_schedule_a = custom_decay_schedule(0.1, f=0)
+
+                                epsilon_schedule = rl_model.decay_schedule(init_val = init_epsilon,
+                                                  min_val = min_epsilon, 
+                                                  ratio = epsilon_decay_ratio, 
+                                                  n_episodes = int(n_episodes))
+
+                                learning_schedule = rl_model.decay_schedule_a(init_val = init_alpha,
+                                                                              min_val = min_alpha, 
+                                                                              ratio = epsilon_decay_ratio, 
+                                                                              n_episodes = int(n_episodes))
+
+                                fig,ax = plt.subplots(figsize=(8,6),dpi=200)
+                                ax.plot(range(int(n_episodes)),epsilon_schedule,label="Epsilon")
+                                ax.plot(range(int(n_episodes)),learning_schedule,label="Alpha")
+                                ax.set_xlabel('Episode')
+                                ax.set_ylabel('Value')
+                                plt.legend()
+                                plt.tight_layout()
+                                plt.show()
                                 
                                 Q, V, pi, Q_track, pi_track = rl_model.q_learning(nS=env.observation_space.n,
                                                                                     nA=env.action_space.n,
@@ -307,7 +370,8 @@ for g, gamma in enumerate(gammas):
                                                                                     init_epsilon=init_epsilon,
                                                                                     min_epsilon=min_epsilon,
                                                                                     epsilon_decay_ratio=epsilon_decay_ratio,
-                                                                                    n_episodes=int(n_episodes))
+                                                                                    n_episodes=int(n_episodes),
+                                                                                    isFL = True)
                                 
                                 n_states = env.observation_space.n
                                 new_pi = list(map(lambda x: pi[x], range(n_states)))
@@ -317,36 +381,42 @@ for g, gamma in enumerate(gammas):
                                 max_q_value_per_iter = np.amax(np.amax(Q_track, axis=2), axis=1)
                                 Plots.v_iters_plot(max_q_value_per_iter, "Q-Learning Max Q-Values")
                                 
+                                avg_q_val_per_iter = np.mean(np.mean(Q_track, axis=2), axis=1)
+                                Plots.v_iters_plot(avg_q_val_per_iter, "Q-Learning Avg. Q-Values")
+                                
                                 Plots.grid_values_heat_map(V, "Q-Learning State Values")
 
+test_scores_q = TestEnv.test_env(env=env, seed=seed,
+                                 render=False, pi=pi,
+                                 user_input=False,
+                                 n_iters = n_iters)
+vPrint("Q-Learning Results:")
+test_scores_q_c = Counter(test_scores_q)
+wins = test_scores_q_c[1]
+wins_p = round(wins / n_iters * 100,2)
+losses = test_scores_q_c[-1]
+losses_p = round(losses / n_iters * 100,2)
+ties = test_scores_q_c[0]
+ties_p = round(ties / n_iters * 100,2)
+vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%); Ties: {ties} ({ties_p}%)\n')
 
-epsilon_schedule = rl_model.decay_schedule(init_val = init_epsilon,
-                  min_val = min_epsilon, 
-                  ratio = epsilon_decay_ratio, 
-                  n_episodes = int(n_episodes))
-
-learning_schedule = rl_model.decay_schedule(init_val = init_alpha,
-                  min_val = min_alpha, 
-                  ratio = alpha_decay_ratio, 
-                  n_episodes = int(n_episodes))
-
-fig,ax = plt.subplots(figsize=(8,6),dpi=200)
-ax.plot(range(int(n_episodes)),epsilon_schedule,label="Epsilon")
-ax.plot(range(int(n_episodes)),learning_schedule,label="Alpha")
-ax.set_xlabel('Episode')
-ax.set_ylabel('Value')
-plt.legend()
-plt.tight_layout()
-plt.show()
 
 
 ###############################################################################
 # Blackjack
 ###############################################################################
 n_iters = 10000
-Q, V, pi, Q_track, pi_track = RL(b.env).q_learning(b.n_states, b.n_actions, b.convert_state_obs)
+n_episodes = 100000
+Q, V, pi, Q_track, pi_track = RL(b.env).q_learning(b.n_states, b.n_actions, b.convert_state_obs, n_episodes=n_episodes)
 test_scores_q = TestEnv.test_env(env=b.env, seed=seed, render=False, pi=pi, user_input=False,
                                convert_state_obs=b.convert_state_obs, n_iters = n_iters)
+
+avg_q_val_per_iter = np.mean(np.mean(Q_track, axis=2), axis=1)
+Plots.v_iters_plot(avg_q_val_per_iter, "Q-Learning Avg. Q-Values")
+
+max_q_value_per_iter = np.amax(np.amax(Q_track, axis=2), axis=1)
+Plots.v_iters_plot(max_q_value_per_iter, "Q-Learning Max Q-Values")
+
 vPrint("Q-Learning Results:")
 test_scores_q_c = Counter(test_scores_q)
 wins = test_scores_q_c[1]
@@ -396,6 +466,10 @@ ties = test_scores_p_c[0]
 ties_p = round(ties / n_iters * 100,2)
 vPrint(f'\tWins: {wins} ({wins_p}%); Losses: {losses} ({losses_p}%); Ties: {ties} ({ties_p}%)\n')
 
+n_states = b.n_states
+new_pi = list(map(lambda x: pi[x], range(n_states)))
+s = int(math.sqrt(n_states))
+Plots.bj_world_policy_plot(np.array(new_pi), "Grid World Policy")
 
 # =============================================================================
 # 

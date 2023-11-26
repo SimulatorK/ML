@@ -32,6 +32,27 @@ class Plots:
             plt.show()
 
     @staticmethod
+    def bj_world_policy_plot(data, label= ''):
+        data = data[:-1]
+        if not math.modf(math.sqrt(len(data)))[0] == 0.0:
+            warnings.warn("Grid map expected.  Check data length")
+        else:
+            d = np.around(np.array(data).reshape((int(math.sqrt(len(data))),int(math.sqrt(len(data))))), 2)
+            df = pd.DataFrame(data=d)
+            my_colors = ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
+            cmap = LinearSegmentedColormap.from_list('Custom', my_colors, len(my_colors))
+            ax = sns.heatmap(df, cmap=cmap, linewidths=1.0)
+            plt.xlabel('Player Total')
+            plt.ylabel('Dealer Showing')
+            colorbar = ax.collections[0].colorbar
+            colorbar.set_ticks([.25, 0.75])
+            colorbar.set_ticklabels(['Stick', 'Hit'])
+            plt.title(label)
+            plt.show()
+
+    
+
+    @staticmethod
     def grid_values_heat_map(data, label):
         if not math.modf(math.sqrt(len(data)))[0] == 0.0:
             warnings.warn("Grid map expected.  Check data length")
@@ -39,6 +60,7 @@ class Plots:
             data = np.around(np.array(data).reshape((int(math.sqrt(len(data))),int(math.sqrt(len(data))))), 2)
             df = pd.DataFrame(data=data)
             sns.heatmap(df, annot=True).set_title(label)
+            plt.tight_layout()
             plt.show()
 
     @staticmethod
